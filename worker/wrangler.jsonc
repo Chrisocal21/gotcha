@@ -6,8 +6,7 @@
     {
       "binding": "DB",
       "database_name": "gotcha",
-      // Placeholder for local dev. Replace with the real id after `wrangler d1 create gotcha`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "e030cfef-c5bd-43e7-af8e-e93369962f13",
       "migrations_dir": "migrations"
     }
   ],

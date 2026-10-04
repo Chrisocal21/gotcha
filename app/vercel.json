@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://gotcha-worker.recipeer-cbv.workers.dev/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
