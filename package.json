@@ -1,0 +1,12 @@
+{
+  "name": "gotcha",
+  "private": true,
+  "workspaces": ["app", "worker"],
+  "scripts": {
+    "dev": "concurrently -n worker,app -c yellow,cyan \"npm run dev -w worker\" \"npm run dev -w app\"",
+    "db:migrate": "npm run db:migrate -w worker"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

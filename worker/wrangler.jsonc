@@ -1,0 +1,23 @@
+{
+  "name": "gotcha-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gotcha",
+      // Placeholder for local dev. Replace with the real id after `wrangler d1 create gotcha`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    { "binding": "ART", "bucket_name": "gotcha-art" }
+  ],
+  "vars": {
+    "DAILY_CAP": "10",
+    "VISION_MODEL": "gpt-4o",
+    "IMAGE_MODEL": "gpt-image-1",
+    "IMAGE_QUALITY": "low"
+  }
+}

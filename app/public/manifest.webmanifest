@@ -1,0 +1,11 @@
+{
+  "name": "Gotcha",
+  "short_name": "Gotcha",
+  "description": "Photograph real animals and collect them as one-of-a-kind illustrated cards.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2ede3",
+  "theme_color": "#f2ede3",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

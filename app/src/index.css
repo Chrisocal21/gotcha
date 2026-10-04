@@ -1,0 +1,1604 @@
+@import "tailwindcss";
+
+/*
+  Gotcha design language (docs/GOTCHA_DESIGN.md)
+  - Warm, sunlit nature palette: sand and paper surfaces, canopy green, sun orange.
+  - Cards are real trading cards: the frame material shows rarity, the card color shows the animal class.
+  - The camera and the reveal are dark stages, so the moment of catching feels like a show.
+*/
+
+@theme {
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-sand: #f2ede3;
+  --color-paper: #ffffff;
+  --color-paper-2: #f8f5ef;
+  --color-paper-3: #efe9dd;
+  --color-ink: #17211c;
+  --color-ink-2: #55615a;
+  --color-ink-3: #8b948e;
+  --color-line: rgb(23 33 28 / 0.09);
+  --color-line-strong: rgb(23 33 28 / 0.16);
+
+  --color-canopy: #0f5e47;
+  --color-canopy-2: #0b4a38;
+  --color-canopy-soft: #dcede5;
+  --color-sun: #ffb21e;
+  --color-ember: #ff7a1a;
+  --color-sun-soft: #fff0d4;
+  --color-ember-soft: #ffe6d6;
+  --color-sky-soft: #e0eefa;
+  --color-danger: #c93d3d;
+  --color-ember-ink: #b4480b;
+  --color-night: #0c1411;
+
+  --color-common: #8e979f;
+  --color-uncommon: #2fa866;
+  --color-rare: #2f7de1;
+  --color-epic: #8b4de0;
+  --color-legendary: #e8a317;
+
+  --shadow-soft: 0 1px 2px rgb(23 33 28 / 0.05), 0 8px 24px -10px rgb(23 33 28 / 0.18);
+  --shadow-lift: 0 2px 6px rgb(23 33 28 / 0.08), 0 28px 56px -20px rgb(23 33 28 / 0.38);
+
+  --ease-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+/*
+  Personal style variables. The Customize screen overrides these (see lib/style.ts); the values
+  here are the defaults. Colors that depend on them are derived below, in light and dark.
+*/
+:root {
+  --accent: #0f5e47;
+  --on-accent: #ffffff;
+  --action-1: #ffd04d;
+  --action-2: #ffa526;
+  --action-3: #ff7a1a;
+  --bg-a: #c4e4d1;
+  --bg-b: #ffdca0;
+  --bg-c: #c1dbef;
+  --back-1: #18805f;
+  --back-2: #0f5e47;
+  --back-3: #08392b;
+  --r-panel: 24px;
+  --r-btn: 9999px;
+
+  --color-canopy: var(--accent);
+  --color-canopy-2: color-mix(in oklab, var(--accent), black 18%);
+  --color-canopy-soft: color-mix(in oklab, var(--accent) 14%, var(--color-paper));
+  --sun-gradient: linear-gradient(135deg, var(--action-1) 0%, var(--action-2) 48%, var(--action-3) 100%);
+  --glow-1: color-mix(in srgb, var(--bg-a) 65%, transparent);
+  --glow-2: color-mix(in srgb, var(--bg-b) 55%, transparent);
+  --glow-3: color-mix(in srgb, var(--bg-c) 50%, transparent);
+
+  --spectrum: var(--color-common), var(--color-uncommon), var(--color-rare), var(--color-epic), var(--color-legendary);
+  --track: rgb(23 33 28 / 0.09);
+  --hover: rgb(255 255 255 / 0.6);
+  color-scheme: light;
+}
+
+:root[data-pattern="dots"] {
+  --pattern: radial-gradient(var(--color-line-strong) 1.3px, transparent 1.7px);
+  --pattern-size: 22px 22px;
+}
+:root[data-pattern="stripes"] {
+  --pattern: repeating-linear-gradient(135deg, var(--color-line) 0 1px, transparent 1px 14px);
+  --pattern-size: auto;
+}
+:root[data-pattern="checks"] {
+  --pattern: conic-gradient(var(--color-line) 25%, transparent 0 50%, var(--color-line) 0 75%, transparent 0);
+  --pattern-size: 32px 32px;
+}
+
+/*
+  Dark theme. Applied when the person picks Dark, or picks System and their device is dark.
+  Cards are physical objects and keep their light faces in both themes (see .card-box below).
+*/
+:root[data-theme="dark"] {
+  --color-sand: #0d1310;
+  --color-paper: #171e1a;
+  --color-paper-2: #1d2621;
+  --color-paper-3: #26302a;
+  --color-ink: #eef2ee;
+  --color-ink-2: #aab6af;
+  --color-ink-3: #78857d;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-strong: rgb(255 255 255 / 0.17);
+  --color-canopy: color-mix(in oklab, var(--accent), white 22%);
+  --color-canopy-2: color-mix(in oklab, var(--accent), white 8%);
+  --color-canopy-soft: color-mix(in oklab, var(--accent) 24%, var(--color-paper));
+  --color-sun-soft: #3b2a0f;
+  --color-ember-soft: #3c2314;
+  --color-sky-soft: #14293b;
+  --color-ember-ink: #ffb383;
+  --color-danger: #ff7a7a;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -10px rgb(0 0 0 / 0.55);
+  --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.5), 0 28px 56px -20px rgb(0 0 0 / 0.75);
+  --glow-1: color-mix(in srgb, var(--bg-a) 16%, transparent);
+  --glow-2: color-mix(in srgb, var(--bg-b) 9%, transparent);
+  --glow-3: color-mix(in srgb, var(--bg-c) 12%, transparent);
+  --track: rgb(255 255 255 / 0.1);
+  --hover: rgb(255 255 255 / 0.07);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-sand: #0d1310;
+    --color-paper: #171e1a;
+    --color-paper-2: #1d2621;
+    --color-paper-3: #26302a;
+    --color-ink: #eef2ee;
+    --color-ink-2: #aab6af;
+    --color-ink-3: #78857d;
+    --color-line: rgb(255 255 255 / 0.09);
+    --color-line-strong: rgb(255 255 255 / 0.17);
+    --color-canopy: color-mix(in oklab, var(--accent), white 22%);
+    --color-canopy-2: color-mix(in oklab, var(--accent), white 8%);
+    --color-canopy-soft: color-mix(in oklab, var(--accent) 24%, var(--color-paper));
+    --color-sun-soft: #3b2a0f;
+    --color-ember-soft: #3c2314;
+    --color-sky-soft: #14293b;
+    --color-ember-ink: #ffb383;
+    --color-danger: #ff7a7a;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -10px rgb(0 0 0 / 0.55);
+    --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.5), 0 28px 56px -20px rgb(0 0 0 / 0.75);
+    --glow-1: color-mix(in srgb, var(--bg-a) 16%, transparent);
+    --glow-2: color-mix(in srgb, var(--bg-b) 9%, transparent);
+    --glow-3: color-mix(in srgb, var(--bg-c) 12%, transparent);
+    --track: rgb(255 255 255 / 0.1);
+    --hover: rgb(255 255 255 / 0.07);
+    color-scheme: dark;
+  }
+}
+
+/* Cards keep their light faces in both themes, so text on them always uses the light-theme inks. */
+.card-box {
+  --color-ink: #17211c;
+  --color-ink-2: #55615a;
+  --color-ink-3: #8b948e;
+  --color-paper: #ffffff;
+  /* Personal fonts never change a card: it looks the same to everyone. */
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* The tier-colored score is dark-on-light in light mode and glowing-on-dark in dark mode. */
+:root[data-theme="dark"] .tier-ink {
+  color: var(--tier-glow);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tier-ink {
+    color: var(--tier-glow);
+  }
+}
+
+/* "Reduce motion" setting: same effect as the device-level preference. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ---------- Base ---------- */
+
+html {
+  background: var(--color-sand);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  background:
+    var(--pattern, none),
+    radial-gradient(1000px 620px at -8% -12%, var(--glow-1), transparent 62%),
+    radial-gradient(900px 560px at 108% -8%, var(--glow-2), transparent 62%),
+    radial-gradient(1100px 720px at 50% 118%, var(--glow-3), transparent 62%),
+    var(--color-sand);
+  background-size: var(--pattern-size, auto), auto, auto, auto, auto;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-canopy);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(15 94 71 / 0.18);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 18px);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Layout ---------- */
+
+/* In the components layer so Tailwind utilities (like a narrower max-width) can override. */
+@layer components {
+  .page {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding: 16px 16px calc(100px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .page {
+      padding: 32px 40px 72px;
+    }
+  }
+
+  .camera-stage {
+    height: calc(100dvh - 56px - 72px - env(safe-area-inset-bottom) - 28px);
+    min-height: 420px;
+  }
+  @media (min-width: 1024px) {
+    .camera-stage {
+      height: auto;
+      min-height: 0;
+      aspect-ratio: 4 / 3;
+      max-height: calc(100dvh - 136px);
+    }
+  }
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink-2);
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    box-shadow 0.15s;
+}
+.nav-link:hover {
+  color: var(--color-ink);
+  background: var(--hover);
+}
+.nav-link[aria-current="page"] {
+  color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-soft);
+}
+
+.tab-link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 0 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-ink-3);
+}
+.tab-link::before {
+  content: "";
+  width: 20px;
+  height: 3px;
+  border-radius: 3px;
+  background: transparent;
+}
+.tab-link[aria-current="page"] {
+  color: var(--color-canopy);
+}
+.tab-link[aria-current="page"]::before {
+  background: var(--color-canopy);
+}
+
+/* ---------- Brand ---------- */
+
+.logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.logo-o {
+  display: inline-block;
+  width: 0.54em;
+  height: 0.54em;
+  margin: 0 0.03em 0 0.02em;
+  border-radius: 50%;
+  background: conic-gradient(from 210deg, var(--spectrum), var(--color-common));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 0.13em), #000 calc(100% - 0.125em));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 0.13em), #000 calc(100% - 0.125em));
+}
+
+.sun-fill {
+  background: var(--sun-gradient);
+}
+
+.spectrum-bar {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--spectrum), var(--color-common), var(--spectrum));
+  background-size: 200% 100%;
+  animation: slide 1.8s linear infinite;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--track), var(--color-line-strong), var(--track));
+  background-size: 200% 100%;
+  animation: slide 1.4s linear infinite;
+}
+
+/* Today's catches, one segment each. */
+.meter {
+  display: grid;
+  gap: 4px;
+}
+.meter > span {
+  height: 8px;
+  border-radius: 8px;
+  background: var(--track);
+  transition: background 0.4s;
+}
+.meter > span.is-on {
+  background: var(--sun-gradient);
+}
+.meter--dots {
+  gap: 3px;
+}
+.meter--dots > span {
+  width: 6px;
+  height: 6px;
+}
+
+/* ---------- Shutter ---------- */
+
+.shutter {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 9999px;
+  touch-action: manipulation;
+}
+.shutter__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(var(--spectrum), var(--color-common));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4.5px));
+  animation: spin 8s linear infinite;
+}
+.shutter__core {
+  width: 62px;
+  height: 62px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 34% 28%, #fffaf0 0%, var(--action-1) 26%, var(--action-2) 58%, var(--action-3) 100%);
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.18),
+    0 8px 22px -4px color-mix(in srgb, var(--action-3) 65%, transparent);
+  transition:
+    transform 0.18s var(--ease-smooth),
+    filter 0.2s;
+}
+.shutter:hover:not(:disabled) .shutter__core {
+  filter: brightness(1.06);
+}
+.shutter:active:not(:disabled) .shutter__core {
+  transform: scale(0.88);
+}
+.shutter:disabled .shutter__ring {
+  background: rgb(255 255 255 / 0.25);
+  animation: none;
+}
+.shutter:disabled .shutter__core {
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: none;
+}
+
+/* ---------- Viewfinder ---------- */
+
+.reticle {
+  position: absolute;
+  inset: 22% 18%;
+  pointer-events: none;
+  transition: inset 0.9s var(--ease-smooth);
+}
+.reticle span {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 0 solid rgb(255 255 255 / 0.85);
+}
+.reticle span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-top-left-radius: 12px;
+}
+.reticle span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-top-right-radius: 12px;
+}
+.reticle span:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-bottom-left-radius: 12px;
+}
+.reticle span:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-bottom-right-radius: 12px;
+}
+.reticle.is-locking {
+  inset: 30% 26%;
+  animation: reticle-pulse 1.2s ease-in-out infinite;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgb(0 0 0 / 0.4) 100%);
+}
+
+.developing-photo {
+  filter: saturate(0.35) brightness(0.6) contrast(1.05);
+  animation: slow-zoom 30s linear forwards;
+}
+
+.scan {
+  position: absolute;
+  inset-inline: 0;
+  top: -40%;
+  height: 40%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.12) 75%, rgb(255 255 255 / 0.5) 99%, transparent);
+  mix-blend-mode: screen;
+  animation: scan 2.6s var(--ease-smooth) infinite;
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #fff;
+  animation: flash 0.45s ease-out forwards;
+}
+
+/* ---------- Cards ---------- */
+
+/*
+  Every card is sized by its container, so a thumbnail and a full card are the same object at
+  different scales. Internal measurements use cqw (percent of card width).
+*/
+.card-box {
+  container-type: inline-size;
+  width: 100%;
+}
+
+/* Rarity: the frame material. */
+.tier-common {
+  --tier: var(--color-common);
+  --tier-ink: #5c656e;
+  --tier-glow: #eef1f4;
+  --frame: linear-gradient(145deg, #aab0b8 0%, #f2f4f6 26%, #9aa1a9 50%, #e4e7ea 74%, #a5abb3 100%);
+}
+.tier-uncommon {
+  --tier: var(--color-uncommon);
+  --tier-ink: #1b7445;
+  --tier-glow: #a4f2c8;
+  --frame: linear-gradient(145deg, #14603b 0%, #63d898 26%, #186b41 50%, #4cc382 74%, #14603b 100%);
+}
+.tier-rare {
+  --tier: var(--color-rare);
+  --tier-ink: #1f5bb0;
+  --tier-glow: #b8d8ff;
+  --frame: linear-gradient(145deg, #173f92 0%, #94c7ff 24%, #2560cc 48%, #6caaff 74%, #173f92 100%);
+}
+.tier-epic {
+  --tier: var(--color-epic);
+  --tier-ink: #6a30bb;
+  --tier-glow: #e6ccff;
+  --frame: linear-gradient(145deg, #4a1b95 0%, #deb6ff 20%, #7a3fe0 42%, #ffb7ec 64%, #5e26c0 84%, #4a1b95 100%);
+}
+.tier-legendary {
+  --tier: var(--color-legendary);
+  --tier-ink: #9a6400;
+  --tier-glow: #ffe39a;
+  --frame: linear-gradient(145deg, #8a5c0a 0%, #ffeaa8 15%, #d39a24 33%, #fff8dc 50%, #c48618 66%, #ffd667 84%, #8a5c0a 100%);
+}
+
+/* Animal class: the card color. */
+.cls-mammal {
+  --cls: #d27a26;
+  --cls-soft: #fdf1e3;
+  --cls-mid: #f6d9b6;
+}
+.cls-bird {
+  --cls: #2793cf;
+  --cls-soft: #e8f5fd;
+  --cls-mid: #c3e3f7;
+}
+.cls-reptile {
+  --cls: #4b9637;
+  --cls-soft: #eef7e8;
+  --cls-mid: #cfe8c2;
+}
+.cls-amphibian {
+  --cls: #11998b;
+  --cls-soft: #e4f7f4;
+  --cls-mid: #b8e8e1;
+}
+.cls-fish {
+  --cls: #2d5fcc;
+  --cls-soft: #e9effd;
+  --cls-mid: #c6d5f7;
+}
+.cls-insect {
+  --cls: #bd8f08;
+  --cls-soft: #fcf6df;
+  --cls-mid: #f2e2a9;
+}
+.cls-arachnid {
+  --cls: #8a4cb6;
+  --cls-soft: #f5edfa;
+  --cls-mid: #ddc8ee;
+}
+.cls-other {
+  --cls: #bf527b;
+  --cls-soft: #fcebf1;
+  --cls-mid: #f1c8d8;
+}
+.cls-statue {
+  --cls: #6f6c66;
+  --cls-soft: #f2f1ee;
+  --cls-mid: #d9d6cf;
+}
+
+.gcard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  padding: 2.6cqw;
+  border-radius: 4.8cqw;
+  background: var(--frame);
+  background-size: 220% 220%;
+  background-position: 0% 30%;
+  isolation: isolate;
+  transition:
+    transform 0.6s var(--ease-smooth),
+    box-shadow 0.3s;
+  box-shadow:
+    0 0.5cqw 1cqw rgb(23 33 28 / 0.16),
+    0 4cqw 9cqw -4cqw rgb(23 33 28 / 0.42);
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* 3D only while tilting or settling back: a resting card has no transform, so its text stays sharp. */
+.gcard.is-tilting,
+.gcard.is-settling {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+.gcard.is-tilting {
+  transition: transform 0.08s linear;
+}
+.tier-rare.gcard,
+.tier-epic.gcard,
+.tier-legendary.gcard {
+  animation: frame-flow 8s ease-in-out infinite;
+}
+.tier-epic.gcard {
+  box-shadow:
+    0 0 0 0.3cqw rgb(200 160 255 / 0.35),
+    0 4cqw 12cqw -4cqw rgb(139 77 224 / 0.6);
+}
+.tier-legendary.gcard {
+  box-shadow:
+    0 0 0 0.3cqw rgb(255 220 140 / 0.5),
+    0 4cqw 14cqw -4cqw rgb(232 163 23 / 0.7);
+}
+
+/* A bright band that sweeps across the metal frame on Rare and above. */
+.gcard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.8) 48%, transparent 60%);
+  background-size: 300% 100%;
+  background-position: 150% 0;
+  mix-blend-mode: overlay;
+  opacity: 0;
+}
+.tier-rare.gcard::before,
+.tier-epic.gcard::before,
+.tier-legendary.gcard::before {
+  opacity: 1;
+  animation: sheen 5s ease-in-out infinite;
+}
+
+.gcard__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8cqw;
+  height: 100%;
+  padding: 3cqw 3.2cqw 2.4cqw;
+  overflow: hidden;
+  border-radius: 3cqw;
+  background:
+    radial-gradient(130% 55% at 50% 0%, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0) 70%),
+    linear-gradient(180deg, var(--cls-soft) 0%, var(--cls-mid) 100%);
+  box-shadow:
+    inset 0 0 0 0.3cqw rgb(255 255 255 / 0.7),
+    inset 0 0 0 0.6cqw rgb(23 33 28 / 0.06);
+}
+.gcard__body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.22) 0 0.35cqw, transparent 0.35cqw 1.4cqw);
+  opacity: 0.55;
+}
+
+.gcard__head,
+.gcard__sub,
+.gcard__meta,
+.gcard__ability,
+.gcard__stats,
+.gcard__flavor,
+.gcard__foot {
+  position: relative;
+  z-index: 2;
+}
+
+.gcard__head {
+  order: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2cqw;
+}
+.gcard__sub {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  min-width: 0;
+}
+.gcard__art {
+  order: 3;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0.4cqw 0.3cqw 0.6cqw;
+  overflow: hidden;
+  border-radius: 2.2cqw;
+  background: var(--cls-mid);
+  box-shadow:
+    0 0 0 0.55cqw #fff,
+    0 0 0 0.95cqw color-mix(in srgb, var(--tier) 75%, #fff),
+    0 1.4cqw 2.6cqw -0.6cqw rgb(23 33 28 / 0.35);
+}
+.gcard__spacer {
+  order: 4;
+  display: none;
+}
+.gcard__meta {
+  order: 5;
+}
+.gcard__ability {
+  order: 6;
+}
+.gcard__stats {
+  order: 7;
+}
+.gcard__flavor {
+  order: 8;
+}
+.gcard__foot {
+  order: 9;
+}
+
+.gcard__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: 6.8cqw;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--color-ink);
+}
+.gcard__score {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 1cqw;
+}
+.gcard__score-label {
+  font-family: var(--font-mono);
+  font-size: 2.2cqw;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+.gcard__score-num {
+  font-family: var(--font-display);
+  font-size: 7.2cqw;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--tier-ink);
+}
+.gcard__class {
+  flex: none;
+  padding: 0.6cqw 1.8cqw 0.5cqw;
+  border-radius: 99px;
+  background: var(--cls);
+  font-family: var(--font-mono);
+  font-size: 2.3cqw;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.gcard__species {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 2.9cqw;
+  font-weight: 600;
+  color: var(--color-ink-2);
+}
+.gcard__art > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 45%;
+  pointer-events: none;
+}
+.gcard__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2cqw;
+  font-family: var(--font-mono);
+  font-size: 2.3cqw;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tier-ink);
+}
+.gcard__pips {
+  display: flex;
+  gap: 1.1cqw;
+}
+.gcard__pip {
+  width: 2cqw;
+  height: 2cqw;
+  border-radius: 0.4cqw;
+  rotate: 45deg;
+  background: rgb(23 33 28 / 0.14);
+}
+.gcard__pip.is-on {
+  background: var(--tier);
+  box-shadow: 0 0 1.2cqw color-mix(in srgb, var(--tier) 70%, transparent);
+}
+.gcard__ability {
+  padding: 1.8cqw 2.4cqw 2cqw;
+  border-radius: 2.2cqw;
+  background: rgb(255 255 255 / 0.72);
+  box-shadow: inset 0 0 0 0.25cqw rgb(23 33 28 / 0.05);
+}
+.gcard__ability-name {
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  font-family: var(--font-display);
+  font-size: 3.5cqw;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+.gcard__ability-name::before {
+  content: "";
+  flex: none;
+  width: 1.8cqw;
+  height: 1.8cqw;
+  border-radius: 50%;
+  background: var(--cls);
+  box-shadow: 0 0 0 0.5cqw color-mix(in srgb, var(--cls) 22%, transparent);
+}
+.gcard__ability-text {
+  display: -webkit-box;
+  margin-top: 0.7cqw;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 2.7cqw;
+  line-height: 1.32;
+  color: var(--color-ink-2);
+}
+.gcard__stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1cqw;
+}
+.gcard__stat {
+  padding: 1.2cqw 0 1cqw;
+  border-radius: 1.6cqw;
+  background: rgb(255 255 255 / 0.55);
+  text-align: center;
+}
+.gcard__stat b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3.9cqw;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+.gcard__stat span {
+  display: block;
+  margin-top: 0.6cqw;
+  font-family: var(--font-mono);
+  font-size: 1.9cqw;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-3);
+}
+.gcard__flavor {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 2.6cqw;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--color-ink-2);
+}
+.gcard__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 2.1cqw;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Full art: Epic and Legendary. The illustration runs to the frame and the text sits on it. */
+.gcard--fullart .gcard__body {
+  background: #0f1210;
+  box-shadow: inset 0 0 0 0.3cqw rgb(255 255 255 / 0.25);
+}
+.gcard--fullart .gcard__body::before {
+  display: none;
+}
+.gcard--fullart .gcard__body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(8 10 9 / 0.62) 0%,
+    rgb(8 10 9 / 0) 20%,
+    rgb(8 10 9 / 0) 38%,
+    rgb(8 10 9 / 0.78) 60%,
+    rgb(8 10 9 / 0.94) 100%
+  );
+}
+.gcard--fullart .gcard__art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  border-radius: inherit;
+  box-shadow: none;
+}
+.gcard--fullart .gcard__art > img {
+  object-position: 50% 30%;
+}
+.gcard--fullart .gcard__spacer {
+  display: block;
+  flex: 1;
+}
+.gcard--fullart .gcard__name {
+  color: #fff;
+  text-shadow: 0 0.3cqw 1.2cqw rgb(0 0 0 / 0.45);
+}
+.gcard--fullart .gcard__score-label,
+.gcard--fullart .gcard__species {
+  color: rgb(255 255 255 / 0.8);
+}
+.gcard--fullart .gcard__score-num,
+.gcard--fullart .gcard__meta {
+  color: var(--tier-glow);
+}
+.gcard--fullart .gcard__pip {
+  background: rgb(255 255 255 / 0.25);
+}
+.gcard--fullart .gcard__pip.is-on {
+  background: var(--tier-glow);
+}
+.gcard--fullart .gcard__ability {
+  background: rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 0 0 0.25cqw rgb(255 255 255 / 0.16);
+}
+.gcard--fullart .gcard__ability-name {
+  color: #fff;
+}
+.gcard--fullart .gcard__ability-text,
+.gcard--fullart .gcard__flavor {
+  color: rgb(255 255 255 / 0.76);
+}
+.gcard--fullart .gcard__stat {
+  background: rgb(255 255 255 / 0.1);
+}
+.gcard--fullart .gcard__stat b {
+  color: #fff;
+}
+.gcard--fullart .gcard__stat span,
+.gcard--fullart .gcard__foot {
+  color: rgb(255 255 255 / 0.58);
+}
+
+/* The card in hand: both sides share one set of glare and hologram positions. */
+.hand .gcard__glare {
+  opacity: 1;
+}
+.hand .gcard__holo {
+  animation: none;
+  background-position: var(--hx, 50%) var(--hy, 50%);
+}
+
+/* Flip side: game stats only. */
+.gstats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2.6cqw;
+  height: 100%;
+}
+.gstats__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gstats__label {
+  font-family: var(--font-mono);
+  font-size: 2.4cqw;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+.gstats__name {
+  font-family: var(--font-display);
+  font-size: 7cqw;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--color-ink);
+}
+.gstats__hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 3cqw;
+  padding: 2.4cqw 3cqw;
+  border-radius: 2.6cqw;
+  background: rgb(255 255 255 / 0.7);
+}
+.gstats__score {
+  font-family: var(--font-display);
+  font-size: 17cqw;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--tier-ink);
+}
+.gstats__rarity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6cqw;
+  text-align: right;
+}
+.gstats__rarity b {
+  font-family: var(--font-display);
+  font-size: 5cqw;
+  font-weight: 800;
+  color: var(--tier-ink);
+}
+.gstats__rarity span {
+  font-size: 2.7cqw;
+  color: var(--color-ink-2);
+}
+.gstats__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4cqw;
+  padding: 0 0.6cqw;
+}
+.gstats__row {
+  display: grid;
+  grid-template-columns: 17cqw 1fr 9cqw;
+  align-items: center;
+  gap: 2.4cqw;
+}
+.gstats__row b {
+  font-family: var(--font-display);
+  font-size: 4.4cqw;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+.gstats__bar {
+  position: relative;
+  height: 2.6cqw;
+  overflow: hidden;
+  border-radius: 2.6cqw;
+  background: rgb(23 33 28 / 0.1);
+}
+.gstats__base,
+.gstats__boost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.gstats__base {
+  left: 0;
+  background: var(--cls);
+}
+.gstats__boost {
+  background: var(--tier);
+}
+.gstats__note {
+  margin-top: -1cqw;
+  font-family: var(--font-mono);
+  font-size: 2.3cqw;
+  letter-spacing: 0.08em;
+  text-align: right;
+  color: var(--color-ink-3);
+}
+.gstats__ability-text {
+  margin-top: 0.7cqw;
+  font-size: 2.8cqw;
+  line-height: 1.32;
+  color: var(--color-ink-2);
+}
+.gstats .gcard__foot {
+  margin-top: auto;
+}
+
+/* Thumbnails drop the small print so the art and name carry the card. */
+.gcard--thumb .gcard__ability-text,
+.gcard--thumb .gcard__flavor {
+  display: none;
+}
+
+.gcard__holo {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 18%, #ff4fb8 30%, #8a5cff 38%, #3aa8ff 46%, #42ffd2 54%, #fff36b 62%, transparent 74%);
+  background-size: 280% 280%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.32;
+  animation: holo-drift 7s ease-in-out infinite;
+}
+.tier-legendary .gcard__holo {
+  opacity: 0.42;
+}
+.gcard.is-tilting .gcard__holo {
+  animation: none;
+  background-position: var(--hx, 50%) var(--hy, 50%);
+}
+
+.gcard__glare {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / 0.55), rgb(255 255 255 / 0) 50%);
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.gcard.is-tilting .gcard__glare {
+  opacity: 1;
+}
+
+.gcard__spark {
+  position: absolute;
+  z-index: 3;
+  width: 5cqw;
+  aspect-ratio: 1;
+  pointer-events: none;
+  background: #fff;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+
+/* ---------- Card back ---------- */
+
+.gback {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  padding: 2.6cqw;
+  border-radius: 4.8cqw;
+  background: linear-gradient(145deg, #c9ced4 0%, #f7f8f9 26%, #b9bfc6 50%, #eef0f2 74%, #c2c7cd 100%);
+  box-shadow:
+    0 0.5cqw 1cqw rgb(23 33 28 / 0.16),
+    0 4cqw 9cqw -4cqw rgb(23 33 28 / 0.42);
+  isolation: isolate;
+  transition: box-shadow 0.5s;
+}
+.gback__inner {
+  position: absolute;
+  inset: 2.6cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7cqw;
+  overflow: hidden;
+  border-radius: 3cqw;
+  background:
+    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.045) 0 0.35cqw, transparent 0.35cqw 4.2cqw),
+    repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.045) 0 0.35cqw, transparent 0.35cqw 4.2cqw),
+    radial-gradient(circle at 50% 40%, var(--back-1) 0%, var(--back-2) 48%, var(--back-3) 100%);
+  box-shadow:
+    inset 0 0 0 1.4cqw rgb(255 255 255 / 0.05),
+    inset 0 0 0 1.7cqw rgb(255 255 255 / 0.12);
+}
+.gback__ring {
+  position: relative;
+  width: 40cqw;
+  aspect-ratio: 1;
+  transition: filter 0.5s;
+}
+.gback__ring::before,
+.gback__ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4.4cqw), #000 calc(100% - 4.3cqw));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4.4cqw), #000 calc(100% - 4.3cqw));
+}
+.gback__ring::before {
+  background: conic-gradient(var(--spectrum), var(--color-common));
+  animation: spin 9s linear infinite;
+}
+.gback__ring::after {
+  background: var(--tier, transparent);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.gback .logo {
+  font-size: 9cqw;
+  color: #fff;
+}
+
+/* ---------- Reveal stage ---------- */
+
+.reveal-backdrop {
+  background: radial-gradient(110% 75% at 50% 42%, color-mix(in srgb, var(--tier, #2c3d35) 34%, #0c1411) 0%, #0c1411 72%);
+}
+
+.stage {
+  position: relative;
+  perspective: 1400px;
+}
+/*
+  A card flips by turning each side on its own (front 0 to 180 degrees, back 180 to 360), with the
+  perspective set on the container. Nothing is nested inside a shared 3D scene, which keeps the
+  mouse tilt on the front working and the text sharp.
+*/
+.flip {
+  position: relative;
+  perspective: 1600px;
+}
+.flip__face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.9s cubic-bezier(0.25, 0.9, 0.25, 1);
+}
+.flip__back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+.flip.is-back .flip__face {
+  transform: rotateY(180deg);
+}
+.flip.is-back .flip__back {
+  transform: rotateY(360deg);
+}
+/* Once revealed, drop every transform so the card renders as sharp as anywhere else. */
+.flip.is-done .flip__face {
+  transform: none;
+  transition: none;
+}
+/* Only the side facing you takes the mouse. Otherwise the hidden side steals the pointer and cancels the tilt. */
+.flip__back {
+  pointer-events: none;
+}
+.flip.is-back .flip__back {
+  pointer-events: auto;
+}
+.flip.is-back .flip__face:not(.flip__back) {
+  pointer-events: none;
+}
+
+.card-enter {
+  animation: card-enter 0.7s var(--ease-smooth) backwards;
+}
+
+.aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tier) 65%, transparent) 0%, transparent 62%);
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.rays {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 250%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--tier) 50%, transparent) 0deg 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(circle, #000 6%, transparent 60%);
+  mask: radial-gradient(circle, #000 6%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.9s;
+  animation: spin 22s linear infinite;
+}
+.stage.tier-rare {
+  --rays: 0.3;
+}
+.stage.tier-epic {
+  --rays: 0.55;
+}
+.stage.tier-legendary {
+  --rays: 0.9;
+}
+.stage.is-charging .aura {
+  opacity: 0.95;
+  animation: aura-pulse 0.6s ease-in-out infinite alternate;
+}
+.stage.is-charging .rays,
+.stage.is-flip .rays,
+.stage.is-revealed .rays {
+  opacity: var(--rays, 0);
+}
+.stage.is-flip .aura,
+.stage.is-revealed .aura {
+  opacity: 0.5;
+}
+.stage.is-charging .gback {
+  box-shadow:
+    0 0 0 0.5cqw color-mix(in srgb, var(--tier) 70%, transparent),
+    0 0 20cqw -2cqw var(--tier);
+}
+.stage.is-charging .gback__ring {
+  filter: drop-shadow(0 0 3cqw var(--tier));
+}
+.stage.is-charging .gback__ring::before {
+  animation-duration: 0.9s;
+}
+.stage.is-charging .gback__ring::after {
+  opacity: 0.9;
+}
+.stage.is-charging.tier-epic .shake,
+.stage.is-charging.tier-legendary .shake {
+  animation: shake 0.12s linear infinite;
+}
+
+.particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--s, 6px);
+  height: var(--s, 6px);
+  margin: calc(var(--s, 6px) / -2);
+  border-radius: 50%;
+  pointer-events: none;
+  background: var(--tier);
+  box-shadow: 0 0 10px var(--tier);
+  animation: particle 1.15s cubic-bezier(0.1, 0.75, 0.3, 1) forwards;
+}
+
+.tier-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, #fff 0%, var(--tier) 35%, transparent 75%);
+  animation: flash 0.7s ease-out forwards;
+}
+
+.tier-banner {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #fff 10%, var(--tier) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: stamp 0.65s var(--ease-pop) backwards;
+}
+.tier-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 2px;
+  rotate: 45deg;
+  background: var(--tier);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tier) 60%, transparent);
+}
+.tier-ink {
+  color: var(--tier-ink);
+}
+
+/* ---------- Stats ---------- */
+
+.statbar {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--track);
+}
+.statbar__base,
+.statbar__boost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.statbar__base {
+  left: 0;
+  border-radius: 8px;
+  background: var(--cls, var(--color-ink));
+}
+.statbar__boost {
+  border-radius: 0 8px 8px 0;
+  background: var(--tier);
+}
+
+/* ---------- Motion ---------- */
+
+/* Entrance animations use "backwards" so nothing lingers on the element after they finish
+   (a lingering transform keeps the layer composited and can blur text). */
+.fade-in {
+  animation: fade-in 0.3s ease-out backwards;
+}
+.fade-up {
+  animation: fade-up 0.5s var(--ease-smooth) backwards;
+}
+.rise-in {
+  animation: rise-in 0.55s var(--ease-smooth) backwards;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes slide {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+}
+@keyframes flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes scan {
+  to {
+    top: 100%;
+  }
+}
+@keyframes slow-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+@keyframes reticle-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes frame-flow {
+  0%,
+  100% {
+    background-position: 0% 30%;
+  }
+  50% {
+    background-position: 100% 70%;
+  }
+}
+@keyframes sheen {
+  0% {
+    background-position: 150% 0;
+  }
+  60%,
+  100% {
+    background-position: -50% 0;
+  }
+}
+@keyframes holo-drift {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    scale: 0.3;
+  }
+  50% {
+    opacity: 0.95;
+    scale: 1;
+  }
+}
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.86);
+  }
+}
+@keyframes aura-pulse {
+  from {
+    scale: 0.92;
+  }
+  to {
+    scale: 1.08;
+  }
+}
+@keyframes shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: -1.5px 1px;
+  }
+  50% {
+    translate: 1.5px -1px;
+  }
+  75% {
+    translate: -1px -1.5px;
+  }
+}
+@keyframes particle {
+  from {
+    transform: rotate(var(--a)) translateX(12px);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--a)) translateX(var(--d));
+    opacity: 0;
+  }
+}
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.35);
+    filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
