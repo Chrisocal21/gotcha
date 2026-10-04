@@ -6,6 +6,7 @@ import { saveOriginal, shouldAutoSave } from "../lib/savePhoto";
 import { haptic, sfx } from "../lib/sfx";
 import { CHARGE_MS, REVEAL_HAPTIC, tierClass, tierRank, type Tier } from "../lib/tiers";
 import { CardBack, CardFront } from "../components/GameCard";
+import LiveCard from "../components/LiveCard";
 import { Button, Chip } from "../components/ui";
 
 type Phase = "developing" | "enter" | "charging" | "flip" | "revealed" | "rejected" | "capped" | "error";
@@ -130,25 +131,28 @@ export default function CatchFlow({
               >
                 <div className="aura" />
                 <div className="rays" />
+                {phase === "revealed" && <Motes tier={caught.card.rarity} />}
                 <div className="card-enter">
                   <div className="shake">
-                    <div
-                      className={`flip ${flipped ? "" : "is-back"} ${phase === "revealed" ? "is-done cursor-pointer" : ""}`}
-                      role={phase === "revealed" ? "button" : undefined}
-                      aria-label={phase === "revealed" ? "Open card details" : undefined}
-                      tabIndex={phase === "revealed" ? 0 : -1}
-                      onClick={() => phase === "revealed" && onOpenCard(caught.card.id)}
-                      onKeyDown={(e) => phase === "revealed" && e.key === "Enter" && onOpenCard(caught.card.id)}
-                    >
-                      <div className="flip__face">
-                        <CardFront card={caught.card} score={score} />
-                      </div>
-                      {phase !== "revealed" && (
-                        <div className="flip__face flip__back">
-                          <CardBack />
+                    <LiveCard active burst={phase === "flip" ? 1 + tierRank(caught.card.rarity) * 0.35 : 0}>
+                      <div
+                        className={`flip ${flipped ? "" : "is-back"} ${phase === "revealed" ? "is-done cursor-pointer" : ""}`}
+                        role={phase === "revealed" ? "button" : undefined}
+                        aria-label={phase === "revealed" ? "Open card details" : undefined}
+                        tabIndex={phase === "revealed" ? 0 : -1}
+                        onClick={() => phase === "revealed" && onOpenCard(caught.card.id)}
+                        onKeyDown={(e) => phase === "revealed" && e.key === "Enter" && onOpenCard(caught.card.id)}
+                      >
+                        <div className="flip__face">
+                          <CardFront card={caught.card} score={score} />
                         </div>
-                      )}
-                    </div>
+                        {phase !== "revealed" && (
+                          <div className="flip__face flip__back">
+                            <CardBack />
+                          </div>
+                        )}
+                      </div>
+                    </LiveCard>
                   </div>
                 </div>
                 {phase === "flip" && <Particles tier={caught.card.rarity} />}
@@ -258,6 +262,31 @@ function Developing({ photoUrl, step }: { photoUrl: string; step: number }) {
         <div className="mt-3 text-[13px] text-white/55">Usually 10 to 30 seconds</div>
       </div>
     </div>
+  );
+}
+
+// Slow glowing specks that drift up around the finished card.
+function Motes({ tier }: { tier: Tier }) {
+  const count = 6 + tierRank(tier) * 4;
+  const motes = useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        "--x": `${-15 + Math.random() * 130}%`,
+        "--s": `${3 + Math.random() * 5}px`,
+        "--rise": `${180 + Math.random() * 220}px`,
+        "--drift": `${-30 + Math.random() * 60}px`,
+        animationDuration: `${5 + Math.random() * 5}s`,
+        animationDelay: `${-Math.random() * 8}s`,
+      })),
+    [count],
+  );
+  if (prefersReducedMotion()) return null;
+  return (
+    <>
+      {motes.map((style, i) => (
+        <span key={i} className="mote" style={style as CSSProperties} />
+      ))}
+    </>
   );
 }
 

@@ -1007,6 +1007,43 @@ button:disabled {
   animation: none;
   background-position: var(--hx, 50%) var(--hy, 50%);
 }
+/* The art sits behind the card surface, so it slides against the tilt. */
+.hand .gcard__art > img {
+  transform: translate(calc(var(--px, 0) * 1cqw), calc(var(--py, 0) * 1cqw)) scale(1.09);
+}
+
+/* The live card: a soft shadow on the stage that shifts as the card tilts and floats. */
+.live {
+  position: relative;
+}
+.live__shadow {
+  position: absolute;
+  inset: 8% 6% -3%;
+  border-radius: 8%;
+  background: rgb(0 0 0 / 0.6);
+  filter: blur(26px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s;
+}
+.live.is-active .live__shadow {
+  opacity: 0.55;
+}
+
+/* Glowing specks drifting up around a finished card. */
+.mote {
+  position: absolute;
+  left: var(--x);
+  bottom: 6%;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, #fff 0%, color-mix(in srgb, var(--tier) 80%, #fff) 45%, transparent 72%);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--tier) 60%, transparent);
+  opacity: 0;
+  animation: mote 7s ease-in-out infinite;
+}
 
 /* Flip side: game stats only. */
 .gstats {
@@ -1349,6 +1386,8 @@ button:disabled {
 .stage.is-flip .aura,
 .stage.is-revealed .aura {
   opacity: 0.5;
+}.stage.is-revealed .aura {
+  animation: aura-breathe 4.5s ease-in-out infinite alternate;
 }
 .stage.is-charging .gback {
   box-shadow:
@@ -1558,6 +1597,29 @@ button:disabled {
   }
   to {
     scale: 1.08;
+  }
+}
+@keyframes aura-breathe {
+  from {
+    scale: 0.95;
+    opacity: 0.38;
+  }
+  to {
+    scale: 1.07;
+    opacity: 0.62;
+  }
+}
+@keyframes mote {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  18% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), calc(var(--rise) * -1));
   }
 }
 @keyframes shake {

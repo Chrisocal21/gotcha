@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Card } from "../lib/api";
 import { prefersReducedMotion } from "../lib/hooks";
-import { getGyro } from "../lib/prefs";
+import { applyPose, askMotionPermission, channel, clamp, idleDrift, MAX_X, MAX_Y, spring, useGyro } from "../lib/motion";
 import { haptic, sfx } from "../lib/sfx";
 import { CardFront, CardStats } from "../components/GameCard";
 import { IconClose } from "../components/icons";
@@ -15,23 +15,6 @@ import { IconButton } from "../components/ui";
   - Drag it sideways and it follows your finger, then flies off to the next card (or springs back).
   - Tap to turn it over.
 */
-
-const MAX_X = 13; // degrees, tilting forward and back
-const MAX_Y = 17; // degrees, tilting left and right
-const GYRO_SIGN = 1; // flip to -1 if phone motion feels inverted
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-interface Channel {
-  x: number;
-  v: number;
-}
-const channel = (): Channel => ({ x: 0, v: 0 });
-
-function spring(c: Channel, target: number, dt: number, stiffness: number, damping: number) {
-  c.v += (target - c.x) * stiffness * dt;
-  c.v *= Math.pow(damping, dt);
-  c.x += c.v * dt;
-}
 
 interface Props {
   card: Card;
@@ -52,12 +35,11 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
   const live = useRef({ prev, next, onMove, onClose });
   live.current = { prev, next, onMove, onClose };
 
-  const motion = useRef({ x: channel(), rx: channel(), ry: channel(), rz: channel() });
+  const motion = useRef({ x: channel(), y: channel(), rx: channel(), ry: channel(), rz: channel() });
   const ptr = useRef({ down: false, inside: false, mode: "none" as "none" | "swipe", sx: 0, sy: 0, x: 0, y: 0, t0: 0, vx: 0, lastX: 0, lastT: 0 });
   const hover = useRef<{ x: number; y: number } | null>(null);
-  const gyro = useRef<{ rx: number; ry: number } | null>(null);
+  const gyro = useGyro();
   const commit = useRef<{ dir: 1 | -1; id: string } | null>(null);
-  const askedGyro = useRef(false);
 
   function flip() {
     setFlipped((f) => !f);
@@ -98,11 +80,14 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
         let tRx = 0;
         let tRy = 0;
         let tX = 0;
+        let tY = 0;
         let tRz = 0;
 
         if (!reduced) {
-          tRx += Math.sin(now / 1100) * 1.1;
-          tRy += Math.cos(now / 1400) * 1.5;
+          const idle = idleDrift(now);
+          tRx += idle.rx;
+          tRy += idle.ry;
+          tY = idle.y;
         }
         const point = p.down ? { x: p.x, y: p.y } : hover.current;
         if (point) {
@@ -127,6 +112,7 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
         spring(m.rx, tRx, dt, 0.14, reduced ? 0.5 : 0.76);
         spring(m.ry, tRy, dt, 0.14, reduced ? 0.5 : 0.76);
         spring(m.x, tX, dt, commit.current ? 0.1 : 0.13, 0.78);
+        spring(m.y, tY, dt, 0.08, 0.84);
         spring(m.rz, tRz, dt, 0.13, 0.78);
 
         if (commit.current && Math.abs(m.x.x) > window.innerWidth * 0.8) {
@@ -140,42 +126,12 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
           m.rz.v = 0;
         }
 
-        h.style.transform = `translate3d(${m.x.x.toFixed(2)}px,0,0) rotate(${m.rz.x.toFixed(3)}deg) perspective(1100px) rotateX(${m.rx.x.toFixed(3)}deg) rotateY(${m.ry.x.toFixed(3)}deg)`;
-        h.style.setProperty("--gx", `${clamp(50 + m.ry.x * 2.8, 0, 100)}%`);
-        h.style.setProperty("--gy", `${clamp(50 - m.rx.x * 2.8, 0, 100)}%`);
-        h.style.setProperty("--hx", `${clamp(50 + m.ry.x * 3.4, 0, 100)}%`);
-        h.style.setProperty("--hy", `${clamp(50 - m.rx.x * 3.4, 0, 100)}%`);
+        applyPose(h, { x: m.x.x, y: m.y.x, rx: m.rx.x, ry: m.ry.x, rz: m.rz.x });
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
-
-  // Phone motion. On iPhone, permission has to be asked from a tap (see onPointerDown).
-  function attachGyro() {
-    let b0: number | null = null;
-    let g0: number | null = null;
-    const onOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta == null || e.gamma == null) return;
-      b0 ??= e.beta;
-      g0 ??= e.gamma;
-      // The resting angle slowly follows how you hold the phone, so tilt is relative to that.
-      b0 += (e.beta - b0) * 0.015;
-      g0 += (e.gamma - g0) * 0.015;
-      gyro.current = {
-        rx: clamp((e.beta - b0) * 0.8 * GYRO_SIGN, -MAX_X, MAX_X),
-        ry: clamp((e.gamma - g0) * 0.9 * GYRO_SIGN, -MAX_Y, MAX_Y),
-      };
-    };
-    window.addEventListener("deviceorientation", onOrientation);
-    return () => window.removeEventListener("deviceorientation", onOrientation);
-  }
-
-  useEffect(() => {
-    const D = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> } | undefined;
-    if (!D || !getGyro() || D.requestPermission) return; // iPhone: wait for a tap
-    return attachGyro();
   }, []);
 
   // Keep the screen awake while someone is looking at a card.
@@ -212,12 +168,7 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
     p.t0 = p.lastT = e.timeStamp;
     p.vx = 0;
     e.currentTarget.setPointerCapture(e.pointerId);
-
-    const D = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> } | undefined;
-    if (e.pointerType === "touch" && D?.requestPermission && getGyro() && !askedGyro.current) {
-      askedGyro.current = true;
-      D.requestPermission().then((res) => res === "granted" && attachGyro()).catch(() => {});
-    }
+    if (e.pointerType === "touch") askMotionPermission();
   }
 
   function onPointerMove(e: PointerEvent<HTMLDivElement>) {

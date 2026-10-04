@@ -3,6 +3,7 @@ import type { Collection, Status } from "../lib/api";
 import { captureShot, testFrame, type Shot } from "../lib/capture";
 import { countdown, plural } from "../lib/format";
 import { useNow } from "../lib/hooks";
+import { askMotionPermission } from "../lib/motion";
 import { haptic, sfx } from "../lib/sfx";
 import DevUpload from "../components/DevUpload";
 import { CardFront } from "../components/GameCard";
@@ -56,6 +57,7 @@ export default function CameraScreen({
                 aria-label="Catch"
                 disabled={!canCatch}
                 onClick={() => {
+                  askMotionPermission();
                   const video = camera.videoRef.current;
                   if (video) shoot(() => captureShot(video));
                 }}

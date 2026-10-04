@@ -4,9 +4,11 @@
 
 ## Gotcha
 
-**Overall progress:** 38% (15/40 subtasks)
+**Overall progress:** 65% (28/43 subtasks)
 **Last updated:** October 3, 2026
-**Status:** Active — redesigned app running locally in mock mode, waiting on an OpenAI key for Step Zero
+**Status:** Active — live at https://gotcha-chrisoc.vercel.app with the real OpenAI pipeline. Waiting on Clerk sign-in and a check on a real phone
+
+The overall count now adds up the checklists below (Step Zero and Phases 1 to 3). Earlier percentages used a looser count of 40.
 
 ---
 
@@ -31,7 +33,7 @@
 **Tool:** The Lab was removed Oct 3, 2026. Likeness testing now happens through real catches using the PC-only Upload photo button on the Catch screen (app/src/components/DevUpload.tsx).
 
 - [ ] Pick 5 test subjects (dog, bug, bird, statue, photo with a person)
-- [x] Write the vision prompt (animal check, description, trait scores) — draft in worker/src/ai.ts, untested against GPT-4o
+- [x] Write the vision prompt (animal check, description, trait scores) — in worker/src/ai.ts, now run against GPT-4o on real photos (rockhopper penguin, two miniature schnauzers; a landscape was rejected)
 - [ ] Generate one illustration per subject
 - [ ] Judge likeness
 - [ ] Tune until your own dog looks like your dog
@@ -40,9 +42,9 @@
 
 ### Phase 1 — MVP
 
-**Phase progress:** 78% (14/18)
+**Phase progress:** 90% (27/30)
 **Goal:** Snap, reveal, collect. Does not start until Step Zero holds up.
-**Note:** Every feature below is built and runs in mock mode. Ticked items were checked in a real browser (Edge with a test camera) or through the API. Unticked items wait on a real OpenAI run or on Clerk. Nothing has been tried on a phone yet.
+**Note:** The whole loop now runs for real, on the live site and locally: photo, GPT-4o vision check, rarity roll, gpt-image-1 painting, card saved to D1 and R2. Ticked items were checked in a real browser or through the API. What is left is Clerk sign-in, a photo with a person in frame, and a phone check.
 
 #### Feature 1.1 — Camera Capture
 **Progress:** 100% (3/3)
@@ -52,14 +54,15 @@
 - [x] Send the photo to the Worker
 
 #### Feature 1.2 — Catch Pipeline
-**Progress:** 63% (5/8)
+**Progress:** 89% (8/9)
 
 - [x] Daily cap check (10 per user)
-- [ ] Vision check: animal or statue, people left off
-- [ ] Rejections do not count against the cap
+- [x] Vision check: animals and statues pass, photos with no animal are rejected
+- [ ] People left off the card — not tried yet with a person in frame next to an animal
+- [x] Rejections do not count against the cap — checked: a landscape was rejected and the count stayed put
 - [x] Rarity roll at 55 / 25 / 12 / 5 / 3
 - [x] Stats math: trait scores times rarity boost
-- [ ] Name generation, illustration, photo discarded
+- [x] Name generation, illustration, photo discarded — real cards have names and painted art, and the Worker only holds the photo in memory during the request
 - [x] Save card data to D1
 - [x] Save card art to R2
 
@@ -81,6 +84,26 @@
 
 - [x] Hardcoded user ID while testing
 - [ ] Clerk once the catch loop feels good
+
+#### Feature 1.6 — Live Card
+**Progress:** 83% (5/6)
+**Goal:** A card should feel like an object in your hand, not a picture on a screen.
+
+- [x] Reveal screen card leans toward the mouse or a dragging finger and tilts with the phone (up, down, left and right)
+- [x] Card floats and breathes while it sits there, with an aura that pulses and slow glowing specks around it
+- [x] Art slides behind the surface as the card tilts, so it has depth, and the shadow moves the other way
+- [x] A jolt when the card lands, stronger for rarer cards
+- [x] Card-in-hand view shares the same motion, so a card moves the same everywhere
+- [ ] Check the feel on a real phone (tilt direction, strength, iPhone motion permission)
+
+#### Feature 1.7 — Online
+**Progress:** 100% (5/5)
+
+- [x] Worker, database (D1) and art storage (R2) live on Cloudflare
+- [x] OpenAI key stored as a Worker secret, not in any file or in the app
+- [x] Site live on Vercel at https://gotcha-chrisoc.vercel.app, with /api forwarded to the Worker
+- [x] Monthly spending limit set on the OpenAI account ($15)
+- [x] Developer routes (reset cap, clear samples, paint sample) refused on the live server
 
 ---
 
@@ -114,6 +137,8 @@
 | Oct 3, 2026 | App and Worker skeleton running on localhost:3000 in mock mode. Vision prompt drafted, Step Zero Lab built, cap, rarity, stats, D1 and R2 working | 18% |
 | Oct 3, 2026 | Full visual redesign with its own design language (GOTCHA_DESIGN.md). Camera-first home, rarity build-up reveal with sound and haptics, collection with stats and filters, card detail with tilt. Camera, reveal and collection checked in a real browser | 38% |
 | Oct 3, 2026 | Second redesign after feedback (too dark, cards generic). Brighter nature look, real trading-card layout with animal classes and full-art Epic and Legendary cards, full-width computer layout, Settings page for the OpenAI key, one-click repaint of sample cards | 38% |
+| Oct 3, 2026 | Went online. Worker, D1 and R2 on Cloudflare, OpenAI key as a Worker secret, app on Vercel with /api forwarded to the Worker, $15 monthly OpenAI limit, developer routes refused on the live server. Real catches checked end to end, and a no-animal photo is rejected without using a catch. Phase 1 pipeline items ticked. Counts now follow the checklists (43 subtasks) | 65% |
+| Oct 3, 2026 | Live card polish. The reveal card now floats, leans toward the mouse or a dragging finger, tilts with the phone, gets a jolt when it lands, and has art depth, a moving shadow and drifting specks. The card-in-hand view shares the same motion code (app/src/lib/motion.ts) | 65% |
 
 ---
 
@@ -123,23 +148,23 @@ Done Oct 3, 2026: dark mode and theme setting, reduce motion, vibration setting,
 
 Also built Oct 3, 2026: Customize screen (main color, catch button color, background and pattern, card back, corners, fonts, shareable style codes). Settings changes the app only. Cards never change, so they look identical to everyone once trading exists. Saved on the device for now; once sign-in exists it can save to the account so friends see it.
 
-Also built Oct 3, 2026: card-in-hand view (both sides tilt together with springy physics, drag the card and it follows your finger then flies to the next, tap to flip, phone motion tilt, card counter, screen stays awake, soft sounds and buzzes). Phone motion tilt is untested on a real phone. If it feels inverted, flip GYRO_SIGN in app/src/screens/CardZoom.tsx.
+Also built Oct 3, 2026: card-in-hand view (both sides tilt together with springy physics, drag the card and it follows your finger then flies to the next, tap to flip, phone motion tilt, card counter, screen stays awake, soft sounds and buzzes). The reveal screen card now moves the same way (app/src/components/LiveCard.tsx). Phone motion tilt is untested on a real phone: the card is set to hang in the air while the phone moves around it, and if it feels inverted, flip GYRO_SIGN in app/src/lib/motion.ts. iPhone asks for motion permission once, on the first catch.
 
 Still missing:
 
-- [ ] Put it online with https (Vercel for the app, Cloudflare for the server). Phones cannot use the camera without https
+- [x] Put it online with https (Vercel for the app, Cloudflare for the server). Done Oct 3, 2026
 - [ ] Real sign-in (Clerk). Everyone shares one test account right now, so collections and the daily limit are shared
 - [ ] Try it on a real phone and a real tablet
 - [ ] Decide what testers do with feedback (a form or an email address for the Report a problem button)
-- [ ] Spending cap or alert on the OpenAI account. Each catch costs two AI calls
+- [x] Spending cap on the OpenAI account ($15 a month). Done Oct 3, 2026
 - [ ] Safety check on photos (inappropriate images) before the AI sees them
 - [ ] Verify the dark theme screen by screen (built, but not yet checked in a browser)
 
 ## What to Tackle Next
 
-- [ ] Paste the OpenAI key in Settings, then paint the sample cards there
-- [ ] Pick the 5 Step Zero test subjects and run them through the Lab
-- [ ] Try the app on a phone (the camera needs https away from localhost)
+- [ ] Open https://gotcha-chrisoc.vercel.app on a phone, tilt a freshly caught card, and report whether the tilt feels right or inverted
+- [ ] Pick the 5 Step Zero test subjects and run them through the Upload photo button
+- [ ] Add Clerk sign-in so friends stop sharing one test account
 - [ ] Decide whether to keep the engagement hooks added in the redesign (see GOTCHA_OPEN_QUESTIONS.md)
 - [ ] Check name availability (App Store, Google Play, domain)
 
