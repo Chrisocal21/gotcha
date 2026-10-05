@@ -22,7 +22,7 @@ export function TopNav({ screen, progress, hidden }: { screen: Screen; progress:
   return (
     <header className={`floatbar floatbar--top ${hidden ? "is-hidden" : ""}`}>
       <a href="#/" aria-label="Gotcha home" className="shrink-0" onClick={tap}>
-        <Logo className="text-[26px]" />
+        <Logo className="logo--pop text-[36px]" />
       </a>
       <nav className="flex items-center gap-1">
         {NAV.map((n) => (
@@ -66,7 +66,7 @@ export function MobileTopBar({ progress, hidden }: { progress: Progress | null; 
   return (
     <header className={`floatbar floatbar--mtop ${hidden ? "is-hidden" : ""}`}>
       <a href="#/" aria-label="Gotcha home" className="mr-auto" onClick={tap}>
-        <Logo className="text-[23px]" />
+        <Logo className="logo--pop text-[31px]" />
       </a>
       {progress && (
         <a href="#/explorer" aria-label={`Explorer level ${progress.level}`} className="rounded-full">

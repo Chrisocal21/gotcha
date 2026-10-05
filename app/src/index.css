@@ -613,6 +613,29 @@ button:disabled {
   mask: radial-gradient(farthest-side, transparent calc(100% - 0.13em), #000 calc(100% - 0.125em));
 }
 
+/* The nav wordmark: bigger, with a brand gradient, a glowing ring and a lift on hover. */
+.logo--pop {
+  letter-spacing: -0.045em;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--color-canopy) 35%, transparent));
+  transition: transform 0.25s var(--ease-pop);
+}
+.logo--pop:hover {
+  transform: scale(1.06) rotate(-1.5deg);
+}
+.logo--pop > span:not(.logo-o) {
+  background: linear-gradient(100deg, var(--color-ink) 0%, var(--color-canopy) 60%, var(--color-xp) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.logo--pop .logo-o {
+  width: 0.6em;
+  height: 0.6em;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 0.18em), #000 calc(100% - 0.175em));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 0.18em), #000 calc(100% - 0.175em));
+  filter: saturate(1.4) drop-shadow(0 0 5px color-mix(in srgb, var(--color-rare) 55%, transparent));
+}
 .sun-fill {
   background: var(--sun-gradient);
 }
