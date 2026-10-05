@@ -25,7 +25,7 @@ export interface MedalDef {
   color: string;
   goals: number[];
   metric: (t: Totals) => number;
-  group: "progress" | "class" | "collection" | "habit" | "mystery";
+  group: "progress" | "class" | "collection" | "habit" | "outdoors" | "mystery";
   secret?: { hint: string }; // mystery badges: hidden until found, one step only
 }
 
@@ -55,6 +55,12 @@ export interface Totals {
   night: number;
   early: number;
   weekend: number;
+  wild: number; // cards of wild species
+  wildSpecies: number;
+  wildDays: number; // days with a wild catch
+  wildStreak: number; // longest run of days with a wild catch
+  challenges: number; // weekly challenges completed
+  albums: number; // Field Guide albums finished
   byClass: Record<string, number>;
   speciesByClass: Record<string, number>;
   families: Record<string, number>;
@@ -286,6 +292,7 @@ export const MEDALS: MedalDef[] = [
   tiered({ id: "seasons", name: "Through the Seasons", blurb: "Different calendar months played", unit: "months", glyph: "Snowflake", color: "#4a8fc0", goals: [2, 4, 8, 12, 24, 60], metric: (t) => t.calendarMonths, group: "habit" }),
   tiered({ id: "fullday", name: "Full Day", blurb: "Days with every catch used", unit: "days", glyph: "fullday", color: "#1f8fb8", goals: [1, 5, 20, 60, 200, 500], metric: (t) => t.fullDays, group: "habit" }),
   tiered({ id: "researcher", name: "Field Researcher", blurb: "Days with every task done", unit: "days", glyph: "stamp", color: "#b23f6a", goals: [1, 7, 30, 100, 250, 600], metric: (t) => t.stampDays, group: "habit" }),
+  tiered({ id: "challenger", name: "Challenger", blurb: "Weekly challenges completed", unit: "challenges", glyph: "Rocket", color: "#d63a4e", goals: [1, 4, 12, 26, 52, 104], metric: (t) => t.challenges, group: "habit" }),
   tiered({ id: "weekend", name: "Weekend Warrior", blurb: "Catches on a weekend", unit: "cards", glyph: "Tent", color: "#c86f1f", goals: [5, 25, 100, 300, 750, 2000], metric: (t) => t.weekend, group: "habit" }),
   tiered({ id: "night", name: "Night Owl", blurb: "Catches after midnight", unit: "cards", glyph: "Moon", color: "#3b3f8c", goals: [1, 5, 15, 40, 100, 250], metric: (t) => t.night, group: "habit" }),
   tiered({ id: "early", name: "Early Bird", blurb: "Catches before 8 in the morning", unit: "cards", glyph: "Sunrise", color: "#d98a0b", goals: [1, 5, 15, 40, 100, 250], metric: (t) => t.early, group: "habit" }),
@@ -297,9 +304,15 @@ export const MEDALS: MedalDef[] = [
   tiered({ id: "heavy", name: "Heavy Hitter", blurb: "Cards scoring 250 or more", unit: "cards", glyph: "Dumbbell", color: "#c86f1f", goals: [3, 10, 30, 100, 300, 1000], metric: (t) => t.heavy }),
   tiered({ id: "titan", name: "Titan", blurb: "Cards scoring 400 or more", unit: "cards", glyph: "Swords", color: "#c2412d", goals: [1, 3, 10, 30, 100, 300], metric: (t) => t.titans }),
   tiered({ id: "highscore", name: "High Score", blurb: "Your best card score", unit: "points", glyph: "Trophy", color: "#b8860b", goals: [250, 350, 450, 550, 700, 900], metric: (t) => t.bestScore }),
+  // The outdoors badges: they only count wild species, so they reward getting out and finding real animals.
+  tiered({ id: "wild-things", name: "Wild Things", blurb: "Cards of wild species", unit: "cards", glyph: "Trees", color: "#3f8f3a", goals: [3, 15, 50, 150, 400, 1000], metric: (t) => t.wild, group: "outdoors" }),
+  tiered({ id: "wild-life", name: "Wild Life List", blurb: "Different wild species found", unit: "species", glyph: "species", color: "#2c8a5c", goals: [3, 10, 30, 75, 150, 300], metric: (t) => t.wildSpecies, group: "outdoors" }),
+  tiered({ id: "trailhead", name: "Trailhead", blurb: "Days you found a wild animal", unit: "days", glyph: "Compass", color: "#1f8fb8", goals: [2, 7, 21, 60, 150, 365], metric: (t) => t.wildDays, group: "outdoors" }),
+  tiered({ id: "out-every-day", name: "Out Every Day", blurb: "Longest run of days with a wild find", unit: "days", glyph: "Footprints", color: "#c86f1f", goals: [2, 4, 7, 14, 30, 60], metric: (t) => t.wildStreak, group: "outdoors" }),
   tiered({ id: "pack", name: "Pack Leader", blurb: "Photos with two or more animals", unit: "photos", glyph: "pack", color: "#1d7f99", goals: [1, 5, 20, 50, 120, 300], metric: (t) => t.packs }),
   tiered({ id: "crowd", name: "Crowd Pleaser", blurb: "Most animals in one photo", unit: "animals", glyph: "Users", color: "#108e81", goals: [2, 3, 4, 5, 6, 8], metric: (t) => t.bigPack }),
   tiered({ id: "superfan", name: "Superfan", blurb: "Most cards of a single species", unit: "cards", glyph: "Heart", color: "#c23a6a", goals: [3, 5, 10, 20, 35, 50], metric: (t) => t.maxCopies }),
+  tiered({ id: "guide-keeper", name: "Guide Keeper", blurb: "Field Guide albums finished", unit: "albums", glyph: "BookOpen", color: "#3f7f9a", goals: [1, 2, 4, 6, 8, 10], metric: (t) => t.albums, group: "collection" }),
   tiered({ id: "alphabet", name: "A to Z", blurb: "Different first letters of species names", unit: "letters", glyph: "Type", color: "#7c4aa8", goals: [5, 10, 16, 22, 25, 26], metric: (t) => t.letters, group: "collection" }),
   tiered({ id: "colors", name: "Color Wheel", blurb: "Colors found in species names", unit: "colors", glyph: "Palette", color: "#b23f6a", goals: [2, 4, 6, 8, 10, 13], metric: (t) => t.colorWords, group: "collection" }),
   ...CLASS_MEDALS.map(

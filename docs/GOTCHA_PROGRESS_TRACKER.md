@@ -4,8 +4,8 @@
 
 ## Gotcha
 
-**Overall progress:** 76% (51/67 subtasks)
-**Last updated:** October 4, 2026
+**Overall progress:** 78% (61/78 subtasks)
+**Last updated:** October 5, 2026
 **Status:** Active — the Field Expedition redesign, multi-animal catch, Clerk sign-in, leaderboard, 99 badges and Founders Edition are all in the code and pushed. Vercel deploys every push to https://gotcha-chrisoc.vercel.app (latest deploy matches the newest commit). Not verified from code alone: that the Worker with the newest migrations (0004 to 0007) and the Clerk keys are live on Cloudflare. Still waiting on a check on a real phone
 
 The overall count now adds up the checklists below (Step Zero and Phases 1 to 3). Earlier percentages used a looser count of 40.
@@ -167,6 +167,22 @@ The overall count now adds up the checklists below (Step Zero and Phases 1 to 3)
 - [x] Style codes carry the new settings (older codes still work)
 - [ ] Install it from the live site on a real phone and a PC and check the icon
 
+#### Feature 1.14 — The Core Loop: Go Outside
+**Progress:** 91% (10/11)
+**Goal:** Give people a reason to go outside, find real animals and come back tomorrow, with every system feeding the same loop (Chris, Oct 5, 2026).
+
+- [x] The day follows the explorer's own midnight (a time zone header), not UTC. Daily limit, streak and reset all match
+- [x] Three daily rings: catch 3, find a wild species, and a rotating task
+- [x] Wild species: pets and statues don't count. Extra XP, a Wild chip on the card, an Outdoors badge group
+- [x] Weekly challenge from a pool of 13, with its own board
+- [x] Field Guide: ten albums of named animals, "Next to find", album completion XP
+- [x] Six leaderboards (Score, Streak, Species, Wild, Rare, Challenge), This week or All time, and crews with join codes
+- [x] Public player page with a three-card showcase
+- [x] Journal: a heatmap trail of days out and a month recap
+- [x] Share a card as a picture (phone share sheet, or a download)
+- [x] Safety and cost: free photo moderation, screen-photo rejection, kill switch, global daily limit, in-app feedback, player reports, private stats page
+- [ ] Run migrations 0008 to 0011 on the live database, deploy the Worker and the app, then check it all on a real phone
+
 ---
 
 ### Phase 2 — Polish
@@ -205,6 +221,7 @@ The overall count now adds up the checklists below (Step Zero and Phases 1 to 3)
 | Oct 4, 2026 | Feedback round: floating bars that step aside while scrolling, Settings rebuilt like a phone's settings app with short pages, Explorer in tabs, calmer home and Collection. One photo of several animals now catches each one (up to 3, one card and one catch each), with GOTCHA ×2, a one-by-one reveal, "Caught together" XP and the Pack Leader badge | 70% |
 | Oct 4, 2026 | Chris's own work, 27 commits after my feedback round: Clerk sign-in, leaderboard with screen names, 99 badges with mystery badges and easter eggs, endless levels, print downloads, Founders Edition series, Creator and Founder tags, softer light mode, the camera sharing the floating header and tab bar on phones, a font picker with 16 fonts and a live preview in Customize | 74% |
 | Oct 4, 2026 | Installable app with the "o" icon, a color picker plus "+" hex codes on every color setting, many more presets, and 18 retro background designs (Winamp, Buddy List, Vaporwave and more) | 76% |
+| Oct 5, 2026 | The core loop: daily reset at the explorer's own midnight, three rings with a wild-species ring, weekly challenge, Field Guide albums, six leaderboards with crews, public pages and showcase, journal heatmap and recap, share-a-card picture, photo moderation, kill switch, feedback and reports, private stats. Style sync across devices | 78% |
 
 ---
 
@@ -221,9 +238,9 @@ Still missing:
 - [x] Put it online with https (Vercel for the app, Cloudflare for the server). Done Oct 3, 2026
 - [x] Real sign-in (Clerk). Built Oct 4, 2026
 - [ ] Try it on a real phone and a real tablet
-- [ ] Decide what testers do with feedback (a form or an email address for the Report a problem button)
+- [x] Decide what testers do with feedback: an in-app form that lands in the database, read on the developer stats page. Built Oct 5, 2026
 - [x] Spending cap on the OpenAI account ($15 a month). Done Oct 3, 2026
-- [ ] Safety check on photos (inappropriate images) before the AI sees them
+- [x] Safety check on photos before the AI sees them (free OpenAI moderation). Built Oct 5, 2026. Not yet run against a real flagged image
 - [x] Verify the dark theme screen by screen. Done Oct 4, 2026 (Catch, Collection, Species, Explorer, card detail, Settings, Customize, computer and phone)
 
 ## What to Tackle Next

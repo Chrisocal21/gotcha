@@ -8,7 +8,7 @@
 
 | Project | Status | Last Session | Next Focus |
 |---|---|---|---|
-| Gotcha | Active | 2026-10-04 | Review the Field Expedition redesign, deploy it, then the Step Zero test subjects |
+| Gotcha | Active | 2026-10-05 | Run migrations 0008 to 0011, deploy, try on a real phone, then Step Zero test subjects |
 
 ---
 
@@ -180,6 +180,42 @@ Review the redesign at localhost:3000, deploy it to Vercel, then pick the Step Z
 ### Next Session
 
 Look over the changes, deploy the app and the Worker, then try one real photo with two animals in it.
+
+---
+
+## Gotcha -- Session -- 2026-10-05 (the core loop)
+
+**Status:** Active
+
+---
+
+### What Chris Asked For
+
+- "All" of: fix the daily reset, share a card, a feedback path, photo safety, anti-cheat, a cost kill switch, private analytics, more leaderboards with friends and public profiles, a weekly challenge, a better journal, set albums and badge tie-ins. Built so everything feeds one loop: going outside to find animals.
+
+### What Changed
+
+- The day, daily limit and streak follow each explorer's own midnight (shared/tz.ts, migration 0009).
+- Rings, wild species, weekly challenge and Field Guide (shared/ plus app/src/lib/progress.ts, albums.ts). Badges gained an Outdoors group.
+- Worker: boards for six metrics, crews, showcase and public pages (board.ts, social.ts, migration 0010); moderation, kill switch, global limit, feedback, reports and admin stats (hygiene.ts, migration 0011); screen-photo flag in the vision prompt.
+- App: Today panel on the home screen, Explorer overview, journal heatmap and recap, Compete tab, Guide in Collection, share and showcase buttons on the card, feedback page, report button on player pages, stats page for the developer.
+- Style settings now sync across devices through the account (migration 0008).
+
+### Verified
+
+- Worker API tests (time zones, all boards, crews, showcase, privacy, feedback, reports, stats, kill switch, global limit) and the progress engine pass on a scratch copy. Screens checked in a real browser on computer and phone width. Share picture rendered and downloaded. Production build and type checks pass.
+
+### Not Verified
+
+- Nothing here is on the live site yet: migrations 0008 to 0011 still need to run on the live database before the Worker and app are deployed. Moderation and the screen-photo rejection were not tried against real images (no OpenAI spend this session). The share sheet was only tried through the download fallback.
+
+### Documents Updated
+
+- GOTCHA_DESIGN.md (rings, Core Loop, challenge, Field Guide, boards, safety), GOTCHA_PROGRESS_TRACKER.md (Feature 1.14, now 78%), GOTCHA_OPEN_QUESTIONS.md, GOTCHA_PROJECT_LOG.md (this entry)
+
+### Next Session
+
+- Run migrations, deploy, and try it on a real phone, then a real photo of a screen and a real wild animal.
 
 ---
 

@@ -4,23 +4,31 @@ import { captureShot, testFrame, type Shot } from "../lib/capture";
 import { countdown, plural } from "../lib/format";
 import { useNow } from "../lib/hooks";
 import { askMotionPermission } from "../lib/motion";
-import { XP, type Progress } from "../lib/progress";
+import { navigate } from "../lib/router";
+import { type Progress } from "../lib/progress";
 import { haptic, sfx } from "../lib/sfx";
 import { MobileTopBar, TabBar } from "../components/AppShell";
 import DevUpload from "../components/DevUpload";
 import { CardFront } from "../components/GameCard";
-import { LevelBadge, SectionTitle, TaskRow } from "../components/game";
+import { NextToFind } from "../components/FieldGuide";
+import { ChallengeCard, DayRings, LevelBadge, SectionTitle, TaskRow } from "../components/game";
 import { IconStreak } from "../components/glyphs";
 import { Meter, Panel } from "../components/ui";
 import { useCamera, Viewfinder } from "../components/Viewfinder";
+import { showGuideNext } from "./CollectionScreen";
 
+// One line under the shutter: the most useful thing to do right now, with the outdoors first.
 function hintFor(status: Status | null, progress: Progress | null, now: number): string {
   if (!status) return "";
   if (status.left === 0) return `That's all ${status.cap} for today. New catches in ${countdown(status.resetsAt, now)}.`;
-  if (status.totalCards === 0) return "Point at any real animal, or a statue of one.";
+  if (status.totalCards === 0) return "Point at any real animal. A wild one counts extra.";
+  const hoursLeft = (Date.parse(status.resetsAt) - now) / 3_600_000;
+  if (!status.caughtToday && status.streak > 0 && hoursLeft < 6) return `Your ${status.streak}-day streak ends in ${Math.max(1, Math.ceil(hoursLeft))}h. Catch one!`;
   if (!status.caughtToday && status.streak > 0) return `Catch one today to make it ${status.streak + 1} days in a row.`;
-  const task = progress?.today.tasks.find((t) => !t.done && t.def.id !== "first");
-  if (task) return `Field task: ${task.def.title.charAt(0).toLowerCase()}${task.def.title.slice(1)}, +${task.def.xp} XP`;
+  const wild = progress?.today.tasks.find((t) => t.def.id === "wild" && !t.done);
+  if (wild) return `Find a wild animal for your green ring, +${wild.def.xp} XP`;
+  const task = progress?.today.tasks.find((t) => !t.done);
+  if (task) return `${task.def.title}, +${task.def.xp} XP`;
   return "Two animals in one shot? You'll catch them both.";
 }
 
@@ -130,44 +138,53 @@ export default function CameraScreen({
 }
 
 // Everything about today in one place: catches left, the streak, and the three field tasks.
+// Everything about today in one place: the three rings, catches left, the streak, this week's challenge
+// and a specific animal to go and find.
 function TodayPanel({ status, progress, now }: { status: Status | null; progress: Progress | null; now: number }) {
-  if (!status) return <div className="skeleton h-[380px] shrink-0 rounded-(--r-panel)" />;
-  const done = progress?.today.tasks.filter((t) => t.done).length ?? 0;
+  if (!status) return <div className="skeleton h-[420px] shrink-0 rounded-(--r-panel)" />;
   return (
-    <Panel className="shrink-0 px-5 pt-5 pb-2">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-[20px] leading-tight font-bold tracking-tight">Today</h2>
-        {status.streak > 0 && (
-          <span className="flex items-center gap-1 rounded-full bg-ember-soft px-2.5 py-1 text-[12.5px] font-bold text-ember-ink" title="Days in a row">
-            <IconStreak size={14} strokeWidth={2.6} />
-            {plural(status.streak, "day")}
-          </span>
-        )}
-      </div>
-      <div className="mt-3 flex items-baseline gap-2">
-        <span className="font-display text-[42px] leading-none font-extrabold tracking-tight tabular">{status.left}</span>
-        <span className="font-medium text-ink-2">of {status.cap} catches left</span>
+    <Panel className="shrink-0 p-5">
+      <div className="flex items-center gap-4">
+        {progress && <DayRings tasks={progress.today.tasks} size={92} />}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-display text-[20px] leading-tight font-bold tracking-tight">Today</h2>
+            {status.streak > 0 && (
+              <span className="flex items-center gap-1 rounded-full bg-ember-soft px-2.5 py-1 text-[12.5px] font-bold text-ember-ink" title="Days in a row">
+                <IconStreak size={14} strokeWidth={2.6} />
+                {plural(status.streak, "day")}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="font-display text-[32px] leading-none font-extrabold tracking-tight tabular">{status.left}</span>
+            <span className="text-[13.5px] font-medium text-ink-2">of {status.cap} catches left</span>
+          </div>
+          <div className="mt-1 text-[12px] text-ink-3 tabular">
+            {status.left === 0 ? "New catches in " : "Resets in "}
+            {countdown(status.resetsAt, now)}
+          </div>
+        </div>
       </div>
       <Meter left={status.left} cap={status.cap} className="mt-3.5" />
-      <div className="mt-2 text-[12.5px] text-ink-3 tabular">
-        {status.left === 0 ? "New catches in " : "Resets in "}
-        {countdown(status.resetsAt, now)}
-        {!status.caughtToday && status.streak > 0 ? ` · catch one to keep your streak` : ""}
-      </div>
       {progress && (
-        <div className="mt-4 border-t border-line pt-4">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[14.5px] font-bold">Field tasks</span>
-            <span className="text-[12.5px] text-ink-3">
-              {progress.today.stamp ? "Stamped" : `${done} of 3 · +${XP.stamp} XP for all`}
-            </span>
-          </div>
-          <ul className="mt-1">
-            {progress.today.tasks.map((t) => (
-              <TaskRow key={t.def.id} t={t} />
+        <>
+          <ul className="mt-3 border-t border-line pt-1">
+            {progress.today.tasks.map((t, i) => (
+              <TaskRow key={t.def.id} t={t} ring={i} />
             ))}
           </ul>
-        </div>
+          <div className="mt-2 space-y-2.5">
+            <ChallengeCard c={progress.challenge} now={now} />
+            <NextToFind
+              progress={progress}
+              onOpen={() => {
+                showGuideNext();
+                navigate("/collection");
+              }}
+            />
+          </div>
+        </>
       )}
     </Panel>
   );

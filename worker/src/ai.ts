@@ -31,6 +31,8 @@ export interface Vision {
   verdict: "found" | "rejected";
   rejection_reason: string;
   people_present: boolean;
+  // True when the photo is of a screen, a printed picture or another photo, not the animal itself.
+  photo_of_picture?: boolean;
   animals: Find[];
 }
 
@@ -58,7 +60,7 @@ export const VISION_PROMPT = `You are the catch judge for Gotcha, a collectible 
 - List every real, living animal and every statue or sculpture of an animal (stone, bronze, wood, metal) that is clearly visible, the most prominent first. Any kind counts: mammal, bird, reptile, amphibian, fish, insect, spider, and so on.
 - List at most ${MAX_PER_PHOTO}. If more are visible, list the ${MAX_PER_PHOTO} most prominent.
 - Only list an animal that is clear enough to paint on its own. A tiny blur in the far background does not count.
-- Plush toys, cartoons, screens and printed pictures do not count.
+- Plush toys, cartoons, screens and printed pictures do not count. Set photo_of_picture to true when the photo is mostly of a screen, a monitor, a phone, a printed photo, a poster or a book page showing an animal, instead of the animal itself in front of the camera. Then verdict is "rejected" and rejection_reason kindly asks for the real animal.
 - verdict is "found" when you list at least one animal. Otherwise verdict is "rejected", animals is an empty list, and rejection_reason is one short, friendly sentence (encouraging, no blame).
 - For each animal, kind is "animal" or "statue", and position says where it is in the photo in a few words (for example "on the left", "in front", "the larger one on the right"), so it can be painted on its own. Use an empty string when it is the only one.
 Everything below is for each animal you list.
@@ -162,11 +164,12 @@ const FIND_SCHEMA = {
 const VISION_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["verdict", "rejection_reason", "people_present", "animals"],
+  required: ["verdict", "rejection_reason", "people_present", "photo_of_picture", "animals"],
   properties: {
     verdict: { type: "string", enum: ["found", "rejected"] },
     rejection_reason: { type: "string" },
     people_present: { type: "boolean" },
+    photo_of_picture: { type: "boolean" },
     animals: { type: "array", items: FIND_SCHEMA },
   },
 };
@@ -257,12 +260,14 @@ export async function analyzePhoto(env: AiEnv, photo: Uint8Array, mime: string):
 // Holds the answer to the rules whatever comes back: at most MAX_PER_PHOTO animals, and "found" only with one.
 function tidy(v: Vision): Vision {
   const animals = (v.animals ?? []).slice(0, MAX_PER_PHOTO);
-  if (v.verdict !== "found" || animals.length === 0) {
+  if (v.photo_of_picture || v.verdict !== "found" || animals.length === 0) {
     return {
       ...v,
       verdict: "rejected",
       animals: [],
-      rejection_reason: v.rejection_reason || "No animal spotted this time. Try getting the whole critter in frame.",
+      rejection_reason:
+        v.rejection_reason ||
+        (v.photo_of_picture ? "That looks like a picture of an animal. Find the real one, or a statue, and try again." : "No animal spotted this time. Try getting the whole critter in frame."),
     };
   }
   return { ...v, animals };

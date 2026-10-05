@@ -7,11 +7,12 @@ import { navigate } from "../lib/router";
 import { ODDS, TIERS, tierClass, tierRank, type Tier } from "../lib/tiers";
 import { SHOWCASE } from "../lib/showcase";
 import { CardFan, CardFront, CardSkeleton } from "../components/GameCard";
+import FieldGuide, { NextToFind } from "../components/FieldGuide";
 import { ClassEmblem } from "../components/game";
 import { Button, Panel, Segmented } from "../components/ui";
 
 type Sort = "newest" | "rarity" | "score";
-type View = "cards" | "species";
+type View = "cards" | "species" | "guide";
 
 const SORTS: { value: Sort; label: string }[] = [
   { value: "newest", label: "Newest" },
@@ -21,6 +22,11 @@ const SORTS: { value: Sort; label: string }[] = [
 
 // Remembered for the session, so coming back from a card or another page keeps your place.
 let lastView: View = "cards";
+
+// Lets other screens ("Next to find") open Collection on the Field Guide.
+export function showGuideNext() {
+  lastView = "guide";
+}
 
 export default function CollectionScreen({
   collection,
@@ -58,7 +64,7 @@ export default function CollectionScreen({
     <div className="page">
       <div className="flex items-center justify-between gap-4">
         <h1 className="font-display text-[30px] leading-none font-extrabold tracking-tight lg:text-[40px]">Collection</h1>
-        {cards.length > 0 && (
+        {(cards.length > 0 || view === "guide") && (
           <Segmented
             size="sm"
             value={view}
@@ -66,6 +72,7 @@ export default function CollectionScreen({
             options={[
               { value: "cards", label: "Cards" },
               { value: "species", label: "Species" },
+              { value: "guide", label: "Guide" },
             ]}
           />
         )}
@@ -88,8 +95,10 @@ export default function CollectionScreen({
             <CardSkeleton key={i} />
           ))}
         </div>
+      ) : view === "guide" && progress ? (
+        <FieldGuide progress={progress} onOpenCard={onOpenCard} />
       ) : cards.length === 0 ? (
-        <EmptyCollection />
+        <EmptyCollection progress={progress} onGuide={() => setView("guide")} />
       ) : view === "species" && progress ? (
         <SpeciesView progress={progress} onOpenCard={onOpenCard} />
       ) : (
@@ -260,7 +269,7 @@ function FilterChip({
   );
 }
 
-function EmptyCollection() {
+function EmptyCollection({ progress, onGuide }: { progress: Progress | null; onGuide: () => void }) {
   return (
     <Panel className="mt-8 flex flex-col items-center px-6 py-14 text-center">
       <CardFan cards={SHOWCASE} width={120} />
@@ -271,6 +280,7 @@ function EmptyCollection() {
       <Button variant="sun" className="mt-7 w-60" onClick={() => navigate("/")}>
         Start catching
       </Button>
+      {progress && <NextToFind progress={progress} onOpen={onGuide} className="mt-6 max-w-[420px] !bg-paper-2 text-left" />}
     </Panel>
   );
 }

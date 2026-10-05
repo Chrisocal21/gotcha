@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
+import { CHALLENGE_XP } from "../../../shared/challenges";
+import { shiftDay } from "../../../shared/tz";
 import { isSecret, tierLabel, type ClassKey, type MedalState, type Progress, type TaskState } from "../lib/progress";
 import { ClassGlyph, glyphFor, IconCheck, IconCreator, IconFounder, IconHowTo } from "./glyphs";
 
@@ -129,9 +131,133 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
 
 
 
-export function TaskRow({ t }: { t: TaskState }) {
+// The three daily rings: catch, wild, and the one that changes.
+export const RING_COLORS = ["#10a991", "#58b947", "#ff9f1c"];
+
+// A ring that fills as progress grows, with anything you like in the middle.
+export function ProgressRing({
+  ratio,
+  size = 44,
+  stroke = 5,
+  color = "var(--color-xp)",
+  className = "",
+  children,
+}: {
+  ratio: number;
+  size?: number;
+  stroke?: number;
+  color?: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
   return (
-    <li className={`task ${t.done ? "is-done" : ""}`}>
+    <span className={`relative inline-grid shrink-0 place-items-center ${className}`} style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--track)" strokeWidth={stroke} />
+        <circle
+          className="ring-arc"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - Math.min(1, Math.max(0, ratio)))}
+        />
+      </svg>
+      <span className="absolute inset-0 grid place-items-center">{children}</span>
+    </span>
+  );
+}
+
+// Three rings inside each other, one per daily task. Closing all three earns the day's stamp.
+export function DayRings({ tasks, size = 92 }: { tasks: TaskState[]; size?: number }) {
+  const stroke = 8;
+  const gap = 3;
+  const done = tasks.filter((t) => t.done).length;
+  return (
+    <span className="relative inline-grid shrink-0 place-items-center" style={{ width: size, height: size }} role="img" aria-label={`${done} of ${tasks.length} daily rings closed`}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        {tasks.map((t, i) => {
+          const r = (size - stroke) / 2 - i * (stroke + gap);
+          const c = 2 * Math.PI * r;
+          return (
+            <g key={t.def.id}>
+              <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={RING_COLORS[i]} strokeOpacity={0.16} strokeWidth={stroke} />
+              <circle
+                className="ring-arc"
+                cx={size / 2}
+                cy={size / 2}
+                r={r}
+                fill="none"
+                stroke={RING_COLORS[i]}
+                strokeWidth={stroke}
+                strokeLinecap="round"
+                strokeDasharray={c}
+                strokeDashoffset={c * (1 - t.progress / t.def.goal)}
+              />
+            </g>
+          );
+        })}
+      </svg>
+      <span className="absolute inset-0 grid place-items-center font-display text-[17px] leading-none font-extrabold tabular">
+        {done === tasks.length ? <IconCheck size={22} strokeWidth={3} className="text-xp-ink" /> : `${done}/${tasks.length}`}
+      </span>
+    </span>
+  );
+}
+
+// This week's challenge: one goal for everyone, a fresh one every Monday.
+export function ChallengeCard({
+  c,
+  now,
+  onBoard,
+  className = "",
+}: {
+  c: Progress["challenge"];
+  now: number;
+  onBoard?: () => void;
+  className?: string;
+}) {
+  const ends = new Date(`${shiftDay(c.week, 7)}T00:00:00`).getTime(); // the coming Monday, at local midnight
+  const left = Math.max(0, ends - now);
+  const days = Math.floor(left / 86_400_000);
+  const hours = Math.floor((left % 86_400_000) / 3_600_000);
+  return (
+    <div className={`rounded-2xl bg-paper-2 p-4 ${className}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[12.5px] font-semibold text-ink-3">This week's challenge</span>
+        <span className="text-[12px] text-ink-3 tabular">{c.done ? "Done" : days > 0 ? `${days}d ${hours}h left` : `${hours}h left`}</span>
+      </div>
+      <div className="mt-1 font-display text-[18px] leading-tight font-bold">{c.def.title}</div>
+      <div className="text-[13.5px] text-ink-2">{c.def.blurb}</div>
+      <div className="mt-3 flex items-center gap-3">
+        <span className={`task__bar !h-2 ${c.done ? "is-complete" : ""}`} style={{ "--p": Math.min(1, c.value / c.def.goal) } as CSSProperties}>
+          <i />
+        </span>
+        <span className="shrink-0 text-[12.5px] font-bold tabular">
+          {Math.min(c.value, c.def.goal)}/{c.def.goal}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center justify-between text-[12.5px]">
+        <span className="font-semibold text-xp-ink">+{fmt(CHALLENGE_XP)} XP</span>
+        {onBoard && (
+          <button onClick={onBoard} className="font-semibold text-canopy hover:underline">
+            See the board
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function TaskRow({ t, ring }: { t: TaskState; ring?: number }) {
+  return (
+    <li className={`task ${t.done ? "is-done" : ""}`} style={ring != null ? ({ "--ring": RING_COLORS[ring] } as CSSProperties) : undefined}>
       <span className="task__check" aria-hidden>
         {t.done && <IconCheck size={14} strokeWidth={3} />}
       </span>

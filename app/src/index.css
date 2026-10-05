@@ -901,8 +901,14 @@ button:disabled {
 }
 .task.is-done .task__check {
   border-color: transparent;
-  background: var(--xp-gradient);
-  box-shadow: 0 3px 8px -3px rgb(16 169 145 / 0.7);
+  background: var(--ring, var(--color-xp));
+  box-shadow: 0 3px 8px -3px color-mix(in srgb, var(--ring, var(--color-xp)) 70%, transparent);
+}
+.task:not(.is-done) .task__check {
+  border-color: color-mix(in srgb, var(--ring, var(--color-ink-3)) 55%, transparent);
+}
+.ring-arc {
+  transition: stroke-dashoffset 0.9s var(--ease-smooth);
 }
 .task__title {
   font-size: 14.5px;
@@ -926,6 +932,9 @@ button:disabled {
   inset: 0 auto 0 0;
   width: calc(var(--p) * 100%);
   border-radius: inherit;
+  background: var(--ring, var(--color-xp));
+}
+.task__bar.is-complete > i {
   background: var(--xp-gradient);
 }
 .task__xp {
@@ -2696,6 +2705,83 @@ button:disabled {
   border: 2px dashed var(--color-line-strong);
   border-radius: 8px;
   background: var(--color-paper-2);
+}
+
+/* The catch calendar. */
+.heat {
+  display: grid;
+  grid-template-rows: repeat(7, auto);
+  grid-auto-flow: column;
+  gap: 3px;
+}
+.heat-months {
+  display: grid;
+  gap: 3px;
+  height: 16px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-3);
+}
+.heat__cell {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 3.5px;
+  background: var(--track);
+}
+.heat--1 {
+  background: color-mix(in srgb, var(--color-xp) 30%, var(--track));
+}
+.heat--2 {
+  background: color-mix(in srgb, var(--color-xp) 58%, var(--track));
+}
+.heat--3 {
+  background: color-mix(in srgb, var(--color-xp) 82%, var(--track));
+}
+.heat--4 {
+  background: var(--color-xp);
+}
+.heat__cell.is-today {
+  outline: 2px solid var(--color-ink-3);
+  outline-offset: 1px;
+}
+.heat__cell.is-future {
+  opacity: 0.3;
+}
+
+/* Field Guide: an album on the list, and an animal you haven't found yet. */
+.guide-album {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-line);
+  border-radius: 22px;
+  background: var(--color-paper);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s;
+}
+.guide-album:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+.guide-missing {
+  overflow: hidden;
+  border: 2px dashed var(--color-line-strong);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--color-paper) 60%, transparent);
+}
+.guide-missing__art {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  color: var(--color-ink-3);
+  background: repeating-linear-gradient(135deg, var(--track) 0 6px, transparent 6px 14px);
+}
+.guide-missing__art svg {
+  opacity: 0.55;
 }
 
 /* A card in the binder lifts toward you on hover. */

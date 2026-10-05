@@ -1,6 +1,10 @@
 import type { AnimalClass, Card } from "./api";
 import { scoreOf } from "./api";
 import { collectionFacts, MEDALS, secretFlags, type MedalDef, type Totals } from "./badges";
+import { deviceTz, localDay, longestStreak, shiftDay, weekStart } from "../../../shared/tz";
+import { CHALLENGE_XP, challengeFor, challengeValue, type ChallengeCard, type ChallengeDef } from "../../../shared/challenges";
+import { isWildSpecies } from "../../../shared/wild";
+import { completingCard, computeAlbums, type AlbumState } from "./albums";
 import { isFounders } from "./series";
 import { TIERS, tierRank, type Tier } from "./tiers";
 
@@ -8,8 +12,8 @@ import { TIERS, tierRank, type Tier } from "./tiers";
   Explorer progress: XP, levels, badges, daily field tasks and the species journal.
 
   Everything here is display only and computed on the device from the cards themselves, so it costs
-  nothing, needs no server, and never touches a locked rule (odds, daily cap, stats). Days follow the
-  server's day (UTC), the same day the catch limit and streak use.
+  nothing, needs no server, and never touches a locked rule (odds, daily cap, stats). Days are the
+  explorer's own calendar days, the same ones the catch limit and streak use (see shared/tz.ts).
 
   Keep the task pools and XP values stable: past days are re-scored from them, so changing them
   changes everyone's totals.
@@ -20,8 +24,10 @@ import { TIERS, tierRank, type Tier } from "./tiers";
 export const XP = {
   catch: 100,
   newSpecies: 500,
+  wild: 75, // a wild species: worth the trip outside
   together: 250, // each extra animal caught in the same photo
   stamp: 500,
+  album: 1000, // finishing a Field Guide album
   rarity: { Common: 0, Uncommon: 50, Rare: 150, Epic: 400, Legendary: 1000 } as Record<Tier, number>,
 };
 
@@ -85,6 +91,10 @@ export const CLASS_NAMES: Record<ClassKey, { one: string; many: string }> = {
   other: { one: "Wild", many: "Wild" },
 };
 
+// A wild species (not a pet or farm animal, not a statue). The server stamps this on every card; older cards work it out.
+export const isWild = (c: Pick<Card, "wild" | "facts" | "isStatue" | "isSample">) =>
+  c.wild ?? isWildSpecies(c.facts?.conservation_status, c.isStatue, c.isSample);
+
 export const classKeyOf = (c: Pick<Card, "animalClass" | "isStatue">): ClassKey => (c.isStatue ? "statue" : c.animalClass);
 
 const speciesKey = (c: Card) => c.species.trim().toLowerCase();
@@ -98,10 +108,9 @@ const capitals = (s: string) => (s.match(/\b[A-Z]/g) ?? []).length;
 
 // ---------- Days ----------
 
-export const dayKey = (iso: string) => iso.slice(0, 10);
-export const todayKey = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
-const DAY_MS = 86_400_000;
-const shiftDay = (key: string, days: number) => new Date(Date.parse(`${key}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
+// The calendar day a card was caught on: stamped by the server in the explorer's time zone.
+export const cardDay = (c: Pick<Card, "day" | "createdAt">) => c.day ?? c.createdAt.slice(0, 10);
+export const todayKey = (now = Date.now()) => localDay(deviceTz(), now);
 
 // ---------- Field tasks ----------
 
@@ -120,17 +129,19 @@ export interface TaskDef {
 
 const ofClass = (day: Caught[], ...keys: ClassKey[]) => day.filter((x) => keys.includes(classKeyOf(x.card))).length;
 
-const OPENER: TaskDef = { id: "first", title: "Make a catch", xp: 200, goal: 1, count: (d) => d.length };
+// The day's three tasks are shown as three rings, like a fitness tracker: catch, wild, and one that changes.
+// The first two never change, so every day has a reason to go outside; the third keeps the days different.
+const RING_CATCH: TaskDef = { id: "catch3", title: "Catch 3 animals", xp: 250, goal: 3, count: (d) => d.length };
 
-const VOLUME: TaskDef[] = [
-  { id: "catch3", title: "Catch 3 animals", xp: 300, goal: 3, count: (d) => d.length },
-  { id: "catch5", title: "Catch 5 animals", xp: 500, goal: 5, count: (d) => d.length },
-  { id: "species2", title: "Catch 2 different species", xp: 300, goal: 2, count: (d) => new Set(d.map((x) => speciesKey(x.card))).size },
-];
+const wildSpecies = (d: Caught[]) => new Set(d.filter((x) => isWild(x.card)).map((x) => speciesKey(x.card))).size;
+const RING_WILD: TaskDef = { id: "wild", title: "Find a wild species", xp: 300, goal: 1, count: (d) => d.filter((x) => isWild(x.card)).length };
 
 // Weighted so the everyday ones come up more often than the hard ones.
-const VARIETY: [TaskDef, number][] = [
-  [{ id: "new", title: "Discover a new species", xp: 500, goal: 1, count: (d) => d.filter((x) => x.isNew).length }, 3],
+const ROTATING: [TaskDef, number][] = [
+  [{ id: "new", title: "Discover a new species", xp: 500, goal: 1, count: (d) => d.filter((x) => x.isNew).length }, 4],
+  [{ id: "wild3", title: "Find 3 different wild species", xp: 600, goal: 3, count: wildSpecies }, 3],
+  [{ id: "species2", title: "Catch 2 different species", xp: 300, goal: 2, count: (d) => new Set(d.map((x) => speciesKey(x.card))).size }, 2],
+  [{ id: "catch5", title: "Catch 5 animals", xp: 500, goal: 5, count: (d) => d.length }, 2],
   [{ id: "bird", title: "Catch a bird", xp: 400, goal: 1, count: (d) => ofClass(d, "bird") }, 2],
   [{ id: "mammal", title: "Catch a mammal", xp: 300, goal: 1, count: (d) => ofClass(d, "mammal") }, 2],
   [{ id: "lucky", title: "Pull an Uncommon or better", xp: 400, goal: 1, count: (d) => d.filter((x) => tierRank(x.card.rarity) >= 1).length }, 2],
@@ -146,21 +157,24 @@ function hash(s: string) {
   return h >>> 0;
 }
 
-// The same three tasks for everyone on a given day.
-export function tasksFor(day: string): TaskDef[] {
-  const h = hash(`gotcha:${day}`);
-  const volume = VOLUME[h % VOLUME.length];
-  const total = VARIETY.reduce((s, [, w]) => s + w, 0);
-  let roll = (h >>> 8) % total;
-  let variety = VARIETY[0][0];
-  for (const [def, w] of VARIETY) {
-    if (roll < w) {
-      variety = def;
-      break;
-    }
+function rotatingFor(day: string): TaskDef {
+  const total = ROTATING.reduce((s, [, w]) => s + w, 0);
+  let roll = hash(`gotcha:${day}`) % total;
+  for (const [def, w] of ROTATING) {
+    if (roll < w) return def;
     roll -= w;
   }
-  return [OPENER, volume, variety];
+  return ROTATING[0][0];
+}
+
+// The same three tasks for everyone on a given day. The third never repeats two days running.
+export function tasksFor(day: string): TaskDef[] {
+  let third = rotatingFor(day);
+  if (third.id === rotatingFor(shiftDay(day, -1)).id) {
+    const i = ROTATING.findIndex(([d]) => d.id === third.id);
+    third = ROTATING[(i + 1) % ROTATING.length][0];
+  }
+  return [RING_CATCH, RING_WILD, third];
 }
 
 export interface TaskState {
@@ -171,7 +185,7 @@ export interface TaskState {
 
 // ---------- Ledger ----------
 
-export type XpKind = "catch" | "rarity" | "species" | "together" | "task" | "stamp";
+export type XpKind = "catch" | "rarity" | "species" | "wild" | "together" | "task" | "stamp" | "challenge" | "album";
 
 export interface XpLine {
   kind: XpKind;
@@ -230,8 +244,12 @@ export interface Progress extends LevelInfo {
   xp: number;
   cards: number;
   species: number;
+  wild: number; // cards of wild species
+  wildSpecies: number;
   currentStreak: number;
   bestStreak: number;
+  challenge: { def: ChallengeDef; week: string; value: number; done: boolean }; // this week's
+  albums: AlbumState[]; // the Field Guide
   tiers: Record<Tier, number>;
   classes: Record<ClassKey, { cards: number; species: number }>;
   medals: MedalState[];
@@ -275,10 +293,11 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
     const lines: XpLine[] = [{ kind: "catch", label: "Catch", xp: XP.catch }];
     if (XP.rarity[card.rarity] > 0) lines.push({ kind: "rarity", label: `${card.rarity} find`, xp: XP.rarity[card.rarity] });
     if (isNew) lines.push({ kind: "species", label: "New species", xp: XP.newSpecies });
+    if (isWild(card)) lines.push({ kind: "wild", label: "Wild species", xp: XP.wild });
     if (photos.get(card.createdAt)![0] !== card) lines.push({ kind: "together", label: "Caught together", xp: XP.together });
     ledger.set(card.id, lines);
 
-    const day = dayKey(card.createdAt);
+    const day = cardDay(card);
     if (!byDay.has(day)) byDay.set(day, []);
     byDay.get(day)!.push({ card, isNew });
 
@@ -294,6 +313,37 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
     j.cards.push(card);
   }
   for (const [cls, set] of speciesByClass) classes[cls].species = set.size;
+
+  // Weekly challenges, scored week by week. The XP goes to the card that completed it.
+  const asChallengeCard = (c: Card): ChallengeCard => ({ day: cardDay(c), species: c.species, wild: isWild(c), animalClass: c.animalClass, isStatue: c.isStatue, rarity: c.rarity });
+  const byWeek = new Map<string, Card[]>();
+  for (const card of cards) {
+    const w = weekStart(cardDay(card));
+    if (!byWeek.has(w)) byWeek.set(w, []);
+    byWeek.get(w)!.push(card);
+  }
+  let challengesDone = 0;
+  for (const [week, list] of byWeek) {
+    const def = challengeFor(week);
+    const sofar: ChallengeCard[] = [];
+    for (const card of list) {
+      sofar.push(asChallengeCard(card));
+      if (challengeValue(def, sofar) >= def.goal) {
+        ledger.get(card.id)!.push({ kind: "challenge", label: def.title, xp: CHALLENGE_XP });
+        challengesDone++;
+        break;
+      }
+    }
+  }
+  // Field Guide albums: finishing one pays out once, to the card that filled its last slot.
+  const albums = computeAlbums(cards);
+  for (const a of albums) {
+    const done = completingCard(a);
+    if (done) ledger.get(done.id)!.push({ kind: "album", label: `${a.def.name} complete`, xp: XP.album });
+  }
+  const thisWeek = weekStart(todayKey(now));
+  const thisDef = challengeFor(thisWeek);
+  const thisValue = challengeValue(thisDef, (byWeek.get(thisWeek) ?? []).map(asChallengeCard));
 
   // Field tasks, scored day by day. A task's XP goes to the card that completed it.
   const evaluate = (day: string, caught: Caught[]): DayLog => {
@@ -353,6 +403,9 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
     dayKeys: chronological.map((d) => d.day),
     eggs,
   });
+  const wildCards = cards.filter(isWild);
+  const wildDays = [...new Set(wildCards.map(cardDay))];
+  const wildSpeciesCount = new Set(wildCards.map(speciesKey)).size;
   const totals: Totals = {
     cards: cards.length,
     founders: cards.filter((c) => isFounders(c.series)).length,
@@ -379,6 +432,12 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
     night: facts.night,
     early: facts.early,
     weekend: facts.weekend,
+    wild: wildCards.length,
+    wildSpecies: wildSpeciesCount,
+    wildDays: wildDays.length,
+    wildStreak: longestStreak(wildDays),
+    challenges: challengesDone,
+    albums: albums.filter((a) => a.done).length,
     byClass: Object.fromEntries(CLASS_ORDER.map((k) => [k, classes[k].cards])),
     speciesByClass: Object.fromEntries(CLASS_ORDER.map((k) => [k, classes[k].species])),
     families: facts.families,
@@ -406,8 +465,12 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
     xp,
     cards: cards.length,
     species: seen.size,
+    wild: wildCards.length,
+    wildSpecies: wildSpeciesCount,
     currentStreak,
     bestStreak,
+    challenge: { def: thisDef, week: thisWeek, value: thisValue, done: thisValue >= thisDef.goal },
+    albums,
     tiers,
     classes,
     medals,

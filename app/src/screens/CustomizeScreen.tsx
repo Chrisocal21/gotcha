@@ -32,6 +32,12 @@ const gradient = (colors: readonly string[]) => `linear-gradient(135deg, ${color
 // Your own look for the app. Cards never change, so every card looks the same to everyone.
 export default function CustomizeScreen() {
   const [style, setStyle] = useState<Style>(getStyle);
+  // A look arriving from another device (through the account) replaces what's shown here.
+  useEffect(() => {
+    const onRemote = () => setStyle(getStyle());
+    window.addEventListener("gotcha:style", onRemote);
+    return () => window.removeEventListener("gotcha:style", onRemote);
+  }, []);
   const [code, setCode] = useState("");
   const [note, setNote] = useState<string | null>(null);
 

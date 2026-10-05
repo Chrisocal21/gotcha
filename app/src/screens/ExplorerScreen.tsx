@@ -9,7 +9,11 @@ import { getExplorerName, setExplorerName } from "../lib/prefs";
 import { CLASS_NAMES, CLASS_ORDER, isSecret, MEDAL_TIERS, nextRank, XP, type DayLog, type MedalDef, type MedalState, type Progress } from "../lib/progress";
 import { ODDS, TIERS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
-import { ClassEmblem, CreatorTag, FounderTag, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
+import { ChallengeCard, ClassEmblem, CreatorTag, DayRings, FounderTag, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
+import { NextToFind } from "../components/FieldGuide";
+import { Heatmap, MonthRecap } from "../components/JournalViews";
+import { navigate } from "../lib/router";
+import { showGuideNext } from "./CollectionScreen";
 import { Button, Panel, Segmented } from "../components/ui";
 import Leaderboard from "../components/Leaderboard";
 
@@ -35,6 +39,7 @@ export default function ExplorerScreen({
   onOpenCard: (id: string) => void;
 }) {
   const [tab, setTabState] = useState<Tab>(lastTab);
+  const now = useNow();
   const setTab = (t: Tab) => {
     lastTab = t;
     setTabState(t);
@@ -56,8 +61,25 @@ export default function ExplorerScreen({
       </div>
       {tab === "overview" && (
         <div className="fade-in mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2 lg:items-start">
-          <FieldTasks p={progress} status={status} />
           <div className="min-w-0 space-y-5">
+            <StreakNudge status={status} />
+            <FieldTasks p={progress} status={status} />
+            <Panel className="p-5 sm:p-6">
+              <ChallengeCard c={progress.challenge} now={now} onBoard={() => setTab("board")} className="!bg-transparent !p-0" />
+            </Panel>
+          </div>
+          <div className="min-w-0 space-y-5">
+            <Panel className="p-5 sm:p-6">
+              <SectionTitle title="Go find" sub="A real animal to look for next" />
+              <NextToFind
+                progress={progress}
+                className="mt-3"
+                onOpen={() => {
+                  showGuideNext();
+                  navigate("/collection");
+                }}
+              />
+            </Panel>
             <RoadAhead p={progress} />
             <NextBadges p={progress} onSeeAll={() => setTab("badges")} />
             <ClassStrip p={progress} />
@@ -66,7 +88,13 @@ export default function ExplorerScreen({
         </div>
       )}
       {tab === "badges" && <Badges p={progress} />}
-      {tab === "journal" && <Journal days={progress.days} onOpenCard={onOpenCard} />}
+      {tab === "journal" && (
+        <>
+          <Heatmap p={progress} />
+          <MonthRecap p={progress} onOpenCard={onOpenCard} />
+          <Journal days={progress.days} onOpenCard={onOpenCard} />
+        </>
+      )}
       {tab === "board" && <Leaderboard />}
     </div>
   );
@@ -165,29 +193,47 @@ function HeroStat({ value, label }: { value: number; label: string }) {
   );
 }
 
+// If today's streak is about to run out, say so while there's still time to save it.
+function StreakNudge({ status }: { status: Status | null }) {
+  const now = useNow();
+  if (!status || status.streak < 1 || status.caughtToday) return null;
+  const left = Date.parse(status.resetsAt) - now;
+  if (left > 8 * 3_600_000) return null;
+  const h = Math.max(1, Math.ceil(left / 3_600_000));
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-ember-soft px-4 py-3.5 text-ember-ink">
+      <span className="text-[22px] leading-none font-extrabold tabular">{status.streak}</span>
+      <div className="min-w-0 text-[13.5px] leading-snug">
+        <b className="font-bold">Your {status.streak}-day streak ends in about {h}h.</b> Catch one animal to keep it going.
+      </div>
+    </div>
+  );
+}
+
+// Three rings, like a fitness tracker: catch, find something wild, and one that changes every day.
 function FieldTasks({ p, status }: { p: Progress; status: Status | null }) {
   const now = useNow();
-  const done = p.today.tasks.filter((t) => t.done).length;
   return (
     <Panel className="p-5 sm:p-6">
-      <SectionTitle
-        title="Field tasks"
-        sub={status ? `New tasks in ${countdown(status.resetsAt, now)}` : "Three new tasks every day"}
-        action={
-          <span className={`rounded-full px-2.5 py-1 text-[12px] font-bold ${p.today.stamp ? "bg-xp-soft text-xp-ink" : "bg-paper-3 text-ink-2"}`}>
-            {p.today.stamp ? "Stamped" : `${done} of 3`}
-          </span>
-        }
-      />
-      <ul className="mt-3">
-        {p.today.tasks.map((t) => (
-          <TaskRow key={t.def.id} t={t} />
+      <div className="flex items-center gap-5">
+        <DayRings tasks={p.today.tasks} size={104} />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-[20px] leading-tight font-bold tracking-tight">Today's rings</h2>
+          <div className="mt-0.5 text-[13px] text-ink-3">{status ? `New rings in ${countdown(status.resetsAt, now)}` : "Three new rings every day"}</div>
+          <div className="mt-2 text-[13px] leading-snug text-ink-2">
+            {p.today.stamp ? "All three closed. Stamped for today!" : `Close all three for the daily stamp, +${XP.stamp} XP.`}
+          </div>
+        </div>
+      </div>
+      <ul className="mt-4">
+        {p.today.tasks.map((t, i) => (
+          <TaskRow key={t.def.id} t={t} ring={i} />
         ))}
       </ul>
       <div className="mt-3 rounded-2xl bg-paper-2 p-4">
         <div className="flex items-center justify-between text-[13px]">
           <span className="font-semibold">This week</span>
-          <span className="text-ink-3">All three tasks: +{XP.stamp} XP</span>
+          <span className="text-ink-3">{p.week.filter((d) => d.stamp).length} stamps</span>
         </div>
         <StampRow week={p.week} className="mt-3" />
       </div>
@@ -317,6 +363,7 @@ const BADGE_GROUPS: { value: BadgeGroup; label: string }[] = [
   { value: "all", label: "All" },
   { value: "progress", label: "Milestones" },
   { value: "habit", label: "Habits" },
+  { value: "outdoors", label: "Outdoors" },
   { value: "class", label: "Animals" },
   { value: "collection", label: "Collections" },
   { value: "mystery", label: "Mystery" },

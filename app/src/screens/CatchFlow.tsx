@@ -290,7 +290,7 @@ export default function CatchFlow({
       {result && result.status === "rejected" && (
         <Outcome
           photoUrl={photoUrl}
-          title="No animal spotted"
+          title={result.title ?? "No animal spotted"}
           body={result.message}
           note="This one didn't use a catch"
           actions={

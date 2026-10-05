@@ -258,14 +258,53 @@ export function applyStyle(style: Style) {
   }
 }
 
-export function saveStyle(style: Style) {
+const AT_KEY = "gotcha.style.at";
+
+// When the saved look last changed on this device, so the newest copy wins when devices sync.
+export function getStyleAt(): number {
+  try {
+    return Number(localStorage.getItem(AT_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Called with every change made on this device, so it can be copied to the account.
+let onChange: ((style: Style, at: number) => void) | null = null;
+export const setStyleListener = (fn: typeof onChange) => {
+  onChange = fn;
+};
+
+function store(style: Style, at: number) {
   try {
     localStorage.setItem(KEY, JSON.stringify(style));
+    localStorage.setItem(AT_KEY, String(at));
   } catch {
     // Same as above.
   }
   applyStyle(style);
 }
+
+export function saveStyle(style: Style) {
+  const at = Date.now();
+  store(style, at);
+  onChange?.(style, at);
+}
+
+// A look that arrived from the account: shown and kept here, without sending it straight back.
+export function applyRemoteStyle(input: unknown, at: number) {
+  const style = sanitize(input);
+  store(style, at);
+  window.dispatchEvent(new CustomEvent("gotcha:style"));
+}
+
+export const hasSavedStyle = () => {
+  try {
+    return localStorage.getItem(KEY) != null;
+  } catch {
+    return false;
+  }
+};
 
 const PREFIX = "gotcha-style:";
 

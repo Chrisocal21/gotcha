@@ -33,7 +33,7 @@
 | What is the card layout and art style? | Sets the look of the whole collection and the base for tier treatments. Draft in GOTCHA_DESIGN.md, needs Chris's sign-off |
 | What traits are scored, and what is each animal's special trait? | Needs a fixed set so a fly and a lion get fair, consistent numbers |
 | Should statue cards be their own card type? | Keeps them distinct from live catches. Suggested, not confirmed. |
-| Does the daily cap reset at midnight in whose timezone? | Parked to Phase 2. For now the cap and the day streak both reset at midnight UTC (currently 8 PM Eastern) |
+| Does the daily cap reset at midnight in whose timezone? | Answered Oct 5, 2026: each explorer's own midnight. The app sends its time zone and the server falls back to UTC for anything unrecognised. A traveler crossing zones can get a slightly short or long day |
 | Is the name Gotcha available? | Check App Store, Google Play, and domain before going public. Pokemon GO shows "Gotcha!" on every catch, and "Go-tcha" is an existing Pokemon GO accessory, so the name leans on Pokemon GO |
 | Keep animal classes on cards? | Added in the second redesign: every card shows Mammal, Bird, Reptile, Amphibian, Fish, Insect or Arachnid, and takes its color and mark from it. Statues wear stone gray. Since the third redesign the classes also drive eight badges and the species journal, so removing them now means removing those too |
 | Are the XP values, level curve and badge goals right? | Set from Pokemon GO's pacing: a first catch reaches level 2, a week of steady play reaches about level 9, level 50 takes a long time. Tune after real play (values in GOTCHA_DESIGN.md) |
@@ -45,7 +45,11 @@
 | What does comparing show: totals, winner per trait, or no verdict? | Parked to Phase 2 |
 | What exact wording does the "keep your distance" message use? | Safety for snakes, stinging insects, and wildlife |
 | What happens to someone holding their dog? | Illustration leaves the person off. Needs testing in Step Zero. |
-| How are screen photos and toy-versus-statue handled? | Anti-cheat, parked to Phase 3 |
+| How are screen photos and toy-versus-statue handled? | The vision step now flags a photo of a screen or a print and rejects it kindly. Not bulletproof (a clever photo can still pass), and untested on real photos |
+| What counts as wild? | Any species whose conservation status is not Domestic, and not a statue. A feral cat or a zoo animal still counts as wild. Needs Chris's sign-off |
+| Are the new numbers right? | Wild +75 XP, rings 250 / 300 / rotating up to 600, stamp 500, challenge 1,000, album 1,000. Crews: 30 people, 5 per person. Three reports hide a name. Tune after real play |
+| Past XP totals change with the new rings | Daily tasks changed, and XP is worked out from cards, so earlier totals shift a little. Fine while there are only testers |
+| Should there be push reminders (streak at risk)? | Deferred. Needs a push service and a permission ask. The home screen shows the streak warning instead |
 
 ---
 

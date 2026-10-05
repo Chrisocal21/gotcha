@@ -1,14 +1,16 @@
 import { authenticate, isDeveloper, type AuthEnv } from "./auth";
-import { joinBoard, leaveBoard, loadBoard } from "./board";
+import { joinBoard, leaveBoard, loadBoard, METRICS } from "./board";
+import { crewName, createCrew, getMyShowcase, isCrewMember, joinCrew, leaveCrew, listCrews, playerPage, setShowcase } from "./social";
+import { CARD_WITH_NUMBER, rowToCard } from "./cards";
+import { addFeedback, addReport, adminStats, catchingPaused, photoIsUnsafe, type HygieneEnv } from "./hygiene";
 import { analyzePhoto, illustrate, sampleDescription, type AiEnv, type ArtMode } from "./ai";
+import { localDay, nextMidnight, streakEndingAt, validTz } from "../../shared/tz";
+import { isWildSpecies } from "../../shared/wild";
 import {
   applyBoost,
   clampTraits,
-  countStreak,
   layoutFor,
-  nextUtcMidnight,
   rollRarity,
-  utcDay,
   ANIMAL_CLASSES,
   BOOST,
   CURRENT_SERIES,
@@ -17,7 +19,7 @@ import {
   type Tier,
 } from "./rules";
 
-interface Env extends AiEnv, AuthEnv {
+interface Env extends AiEnv, AuthEnv, HygieneEnv {
   DB: D1Database;
   ART: R2Bucket;
   DAILY_CAP: string;
@@ -26,26 +28,22 @@ interface Env extends AiEnv, AuthEnv {
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 
-// Every card query carries its collection number: 1 for the first card a user caught, and so on.
-// Cards from one photo share a created time, so the id breaks the tie (they're numbered -0, -1, -2).
-const CARD_WITH_NUMBER = `SELECT c.*, (SELECT COUNT(*) FROM cards x WHERE x.user_id = c.user_id
-    AND (x.created_at < c.created_at OR (x.created_at = c.created_at AND x.id <= c.id))) AS number
-  FROM cards c WHERE c.id = ? AND c.user_id = ?`;
-
-async function caughtToday(env: Env, user: string): Promise<number> {
+// The day, the limit and the streak all follow the explorer's own midnight. The app sends its time zone with
+// every request; anything unrecognised falls back to UTC.
+async function caughtToday(env: Env, user: string, day: string): Promise<number> {
   const row = await env.DB.prepare("SELECT count FROM daily_counts WHERE user_id = ? AND day = ?")
-    .bind(user, utcDay())
+    .bind(user, day)
     .first<{ count: number }>();
   return row?.count ?? 0;
 }
 
-async function streakFor(env: Env, user: string): Promise<number> {
+async function streakFor(env: Env, user: string, today: string): Promise<number> {
   const { results } = await env.DB.prepare(
-    "SELECT DISTINCT substr(created_at, 1, 10) AS day FROM cards WHERE user_id = ? ORDER BY day DESC LIMIT 400",
+    "SELECT DISTINCT local_day AS day FROM cards WHERE user_id = ? AND is_sample = 0 ORDER BY day DESC LIMIT 400",
   )
     .bind(user)
     .all<{ day: string }>();
-  return countStreak(results.map((r) => r.day));
+  return streakEndingAt(results.map((r) => r.day), today);
 }
 
 async function readPhoto(req: Request) {
@@ -56,46 +54,28 @@ async function readPhoto(req: Request) {
   return { photo: new Uint8Array(await file.arrayBuffer()), mime: file.type || "image/jpeg", mode };
 }
 
-function rowToCard(r: any) {
-  return {
-    id: r.id,
-    number: r.number,
-    name: r.name,
-    species: r.species,
-    isStatue: !!r.is_statue,
-    isSample: !!r.is_sample,
-    series: r.series ?? "founders",
-    animalClass: r.animal_class,
-    rarity: r.rarity,
-    description: r.description,
-    traits: JSON.parse(r.traits),
-    stats: JSON.parse(r.stats),
-    special: { name: r.special_name, description: r.special_description },
-    facts: r.facts && r.facts !== "{}" ? JSON.parse(r.facts) : null,
-    artUrl: `/api/art/${r.art_key}`,
-    createdAt: r.created_at,
-  };
-}
-
-async function handleStatus(env: Env, user: string) {
+async function handleStatus(env: Env, user: string, tz: string) {
   const cap = Number(env.DAILY_CAP);
-  const used = await caughtToday(env, user);
+  const today = localDay(tz);
+  const used = await caughtToday(env, user, today);
   const latest = await env.DB.prepare(
-    `SELECT art_key, rarity, created_at, (SELECT COUNT(*) FROM cards WHERE user_id = ?1) AS total
+    `SELECT art_key, rarity, local_day, (SELECT COUNT(*) FROM cards WHERE user_id = ?1) AS total
      FROM cards WHERE user_id = ?1 ORDER BY created_at DESC LIMIT 1`,
   )
     .bind(user)
-    .first<{ art_key: string; rarity: Tier; created_at: string; total: number }>();
+    .first<{ art_key: string; rarity: Tier; local_day: string | null; total: number }>();
   return json({
     user,
     used,
     cap,
     left: Math.max(0, cap - used),
     mock: !env.OPENAI_API_KEY,
-    resetsAt: nextUtcMidnight(),
-    streak: await streakFor(env, user),
+    resetsAt: nextMidnight(tz),
+    day: today,
+    tz,
+    streak: await streakFor(env, user, today),
     creator: await isDeveloper(env, user),
-    caughtToday: latest ? latest.created_at.slice(0, 10) === utcDay() : false,
+    caughtToday: latest ? latest.local_day === today : false,
     totalCards: latest?.total ?? 0,
     latest: latest ? { artUrl: `/api/art/${latest.art_key}`, rarity: latest.rarity } : null,
     odds: ODDS,
@@ -103,7 +83,7 @@ async function handleStatus(env: Env, user: string) {
   });
 }
 
-async function handleCollection(env: Env, user: string) {
+async function handleCollection(env: Env, user: string, tz: string) {
   const { results } = await env.DB.prepare(
     `SELECT *, ROW_NUMBER() OVER (ORDER BY created_at ASC, id ASC) AS number
      FROM cards WHERE user_id = ? ORDER BY created_at DESC, id ASC`,
@@ -117,17 +97,25 @@ async function handleCollection(env: Env, user: string) {
     cards,
     species: new Set(cards.map((c) => String(c.species).toLowerCase())).size,
     tiers,
-    streak: await streakFor(env, user),
+    streak: await streakFor(env, user, localDay(tz)),
   });
 }
 
-async function handleCatch(req: Request, env: Env, user: string) {
+async function handleCatch(req: Request, env: Env, user: string, tz: string) {
   const cap = Number(env.DAILY_CAP);
-  const used = await caughtToday(env, user);
-  if (used >= cap) return json({ status: "capped", used, cap, resetsAt: nextUtcMidnight() }, 429);
+  const today = localDay(tz);
+  const used = await caughtToday(env, user, today);
+  if (used >= cap) return json({ status: "capped", used, cap, resetsAt: nextMidnight(tz) }, 429);
+
+  // Stopped by the kill switch or the everyone-today limit before anything is spent.
+  const paused = await catchingPaused(env);
+  if (paused) return json({ status: "rejected", title: "Catching is resting", message: paused.message, used, cap }, 503);
 
   // The photo lives only in this request's memory and is never stored.
   const { photo, mime, mode } = await readPhoto(req);
+  if (await photoIsUnsafe(env, photo, mime)) {
+    return json({ status: "rejected", title: "Can't use that photo", message: "That photo can't be turned into a card. Try a different one.", used, cap });
+  }
   const vision = await analyzePhoto(env, photo, mime);
   if (vision.verdict === "rejected" || vision.animals.length === 0) {
     return json({ status: "rejected", message: vision.rejection_reason, used, cap });
@@ -171,7 +159,7 @@ async function handleCatch(req: Request, env: Env, user: string) {
     ...cards.map((c) =>
       env.DB.prepare(
         `INSERT INTO cards (id, user_id, name, species, is_statue, is_sample, animal_class, rarity, description, traits,
-          stats, special_name, special_description, art_key, created_at, facts, series) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          stats, special_name, special_description, art_key, created_at, facts, series, local_day, wild) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       ).bind(
         c.id,
         user,
@@ -190,12 +178,14 @@ async function handleCatch(req: Request, env: Env, user: string) {
         createdAt,
         JSON.stringify(c.find.facts ?? {}),
         CURRENT_SERIES,
+        today,
+        isWildSpecies(c.find.facts?.conservation_status, c.find.kind === "statue", !env.OPENAI_API_KEY) ? 1 : 0,
       ),
     ),
     env.DB.prepare(
       `INSERT INTO daily_counts (user_id, day, count) VALUES (?, ?, ?)
        ON CONFLICT (user_id, day) DO UPDATE SET count = count + excluded.count`,
-    ).bind(user, utcDay(), cards.length),
+    ).bind(user, today, cards.length),
   ]);
 
   const saved = [];
@@ -235,10 +225,37 @@ async function paintSample(env: Env, user: string, id: string) {
 }
 
 async function handleGetProfile(env: Env, user: string) {
-  const row = await env.DB.prepare("SELECT display_name FROM profiles WHERE user_id = ?")
+  const row = await env.DB.prepare("SELECT display_name, style, style_at FROM profiles WHERE user_id = ?")
     .bind(user)
-    .first<{ display_name: string }>();
-  return json({ profile: row ? { displayName: row.display_name } : null });
+    .first<{ display_name: string; style: string | null; style_at: number | null }>();
+  if (!row) return json({ profile: null });
+  const showcase = await getMyShowcase(env.DB, user);
+  let style: unknown = null;
+  try {
+    style = row.style ? JSON.parse(row.style) : null;
+  } catch {
+    // A damaged copy is treated as no copy.
+  }
+  return json({ profile: { displayName: row.display_name, style, styleAt: row.style_at ?? 0, showcase } });
+}
+
+// The app's look. The app checks every value itself, so this only keeps it to a sane size and shape.
+async function handlePutStyle(req: Request, env: Env, user: string) {
+  const body = (await req.json().catch(() => null)) as { style?: unknown; at?: unknown } | null;
+  const style = body?.style;
+  const at = Number(body?.at);
+  if (!style || typeof style !== "object" || Array.isArray(style) || !Number.isFinite(at)) return json({ error: "style and at are required" }, 400);
+  const text = JSON.stringify(style);
+  if (text.length > 4000) return json({ error: "That style is too large" }, 413);
+  const now = new Date().toISOString();
+  // An older copy never overwrites a newer one, so two devices can't undo each other by syncing late.
+  await env.DB.prepare(
+    `INSERT INTO profiles (user_id, display_name, created_at, updated_at, style, style_at) VALUES (?1, '', ?2, ?2, ?3, ?4)
+     ON CONFLICT (user_id) DO UPDATE SET style = ?3, style_at = ?4, updated_at = ?2 WHERE COALESCE(style_at, 0) <= ?4`,
+  )
+    .bind(user, now, text, Math.round(at))
+    .run();
+  return json({ ok: true });
 }
 
 async function handlePutProfile(req: Request, env: Env, user: string) {
@@ -274,12 +291,14 @@ export default {
 
       const user = await authenticate(req, env);
       if (!user) return json({ error: "Sign in required" }, 401);
+      const tz = validTz(req.headers.get("X-Tz"));
 
-      if (path === "/api/status" && req.method === "GET") return await handleStatus(env, user);
+      if (path === "/api/status" && req.method === "GET") return await handleStatus(env, user, tz);
       if (path === "/api/profile") {
         if (req.method === "GET") return await handleGetProfile(env, user);
         if (req.method === "PUT") return await handlePutProfile(req, env, user);
       }
+      if (path === "/api/profile/style" && req.method === "PUT") return await handlePutStyle(req, env, user);
       if (path.startsWith("/api/leaderboard") && (await isDeveloper(env, user))) {
         // The creator tag is granted here, from the verified developer account, and never from the app.
         const now = new Date().toISOString();
@@ -287,7 +306,27 @@ export default {
           ON CONFLICT (user_id) DO UPDATE SET role = 'creator'`).bind(user, now).run();
       }
       if (path === "/api/leaderboard" && req.method === "GET") {
-        return json(await loadBoard(env.DB, user, url.searchParams.get("scope") === "week" ? "week" : "all"));
+        const q = url.searchParams;
+        const metric = METRICS.find((m) => m === q.get("metric")) ?? "score";
+        const crew = q.get("crew");
+        if (crew && !(await isCrewMember(env.DB, user, crew))) return json({ error: "Not found" }, 404);
+        const board = await loadBoard(env.DB, user, { scope: q.get("scope") === "week" ? "week" : "all", metric, today: localDay(tz), crew });
+        return json({ ...board, crew: crew ? { id: crew, name: await crewName(env.DB, crew) } : null });
+      }
+      if (path === "/api/crews") {
+        if (req.method === "GET") return await listCrews(env.DB, user);
+        if (req.method === "POST") return await createCrew(env.DB, user, (await req.json().catch(() => null)) as { name?: unknown } | null);
+      }
+      if (path === "/api/crews/join" && req.method === "POST") return await joinCrew(env.DB, user, (await req.json().catch(() => null)) as { code?: unknown } | null);
+      const crewMatch = path.match(/^\/api\/crews\/([\w-]+)$/);
+      if (crewMatch && req.method === "DELETE") return await leaveCrew(env.DB, user, crewMatch[1]);
+      if (path === "/api/showcase" && req.method === "PUT") return await setShowcase(env.DB, user, (await req.json().catch(() => null)) as { ids?: unknown } | null);
+      const playerMatch = path.match(/^\/api\/players\/([^/]+)$/);
+      if (playerMatch && req.method === "GET") return await playerPage(env.DB, decodeURIComponent(playerMatch[1]), localDay(tz));
+      if (path === "/api/feedback" && req.method === "POST") return await addFeedback(env.DB, user, (await req.json().catch(() => null)) as any);
+      if (path === "/api/report" && req.method === "POST") return await addReport(env.DB, user, (await req.json().catch(() => null)) as any);
+      if (path === "/api/admin/stats" && req.method === "GET") {
+        return (await isDeveloper(env, user)) ? await adminStats(env.DB) : json({ error: "Not found" }, 404);
       }
       if (path === "/api/leaderboard/me") {
         if (req.method === "PUT") {
@@ -299,8 +338,8 @@ export default {
           return json({ ok: true });
         }
       }
-      if (path === "/api/catch" && req.method === "POST") return await handleCatch(req, env, user);
-      if (path === "/api/cards" && req.method === "GET") return await handleCollection(env, user);
+      if (path === "/api/catch" && req.method === "POST") return await handleCatch(req, env, user, tz);
+      if (path === "/api/cards" && req.method === "GET") return await handleCollection(env, user, tz);
       const cardMatch = path.match(/^\/api\/cards\/([\w-]+)$/);
       if (cardMatch && req.method === "GET") {
         const row = await env.DB.prepare(CARD_WITH_NUMBER).bind(cardMatch[1], user).first();

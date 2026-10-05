@@ -1,3 +1,4 @@
+import { deviceTz } from "../../../shared/tz";
 import { BOOST, type Tier } from "./tiers";
 
 export type TraitKey = "power" | "speed" | "defense" | "agility" | "senses";
@@ -36,6 +37,8 @@ export interface Card {
   isStatue: boolean;
   isSample: boolean;
   series?: string;
+  day?: string; // the explorer's own calendar day when it was caught (YYYY-MM-DD)
+  wild?: boolean; // a wild species: not a pet or farm animal, not a statue
   animalClass: AnimalClass;
   rarity: Tier;
   description: string;
@@ -52,6 +55,7 @@ export interface Status {
   left: number;
   mock: boolean;
   resetsAt: string;
+  day?: string; // today, in the explorer's time zone
   streak: number;
   caughtToday: boolean;
   creator?: boolean;
@@ -78,7 +82,7 @@ export type CatchResult =
       skipped?: number; // animals left out because the day's catches ran out
       missed?: number; // animals that couldn't be painted (they don't use a catch)
     }
-  | { status: "rejected"; message: string; used: number; cap: number }
+  | { status: "rejected"; title?: string; message: string; used: number; cap: number }
   | { status: "capped"; used: number; cap: number; resetsAt: string }
   | { status: "error"; message: string };
 
@@ -100,6 +104,7 @@ async function authFetch(path: string, init: RequestInit = {}): Promise<Response
   const send = (t: string | null) => {
     const headers = new Headers(init.headers);
     if (t) headers.set("Authorization", `Bearer ${t}`);
+    headers.set("X-Tz", deviceTz()); // the server rolls the day over at this explorer's midnight
     return fetch(path, { ...init, headers });
   };
   const res = await send(token);
@@ -156,6 +161,9 @@ export const boosted = (traits: Traits, tier: Tier): Traits =>
 
 export interface Profile {
   displayName: string;
+  style?: unknown; // the app's look, kept on the account
+  styleAt?: number;
+  showcase?: string[]; // card ids shown on the public page, favorite first
 }
 
 export const getProfile = () => getJson<{ profile: Profile | null }>("/api/profile").then((r) => r.profile);
@@ -170,31 +178,113 @@ export async function saveProfile(profile: Profile): Promise<Profile> {
   return (await res.json()).profile;
 }
 
+export async function saveRemoteStyle(style: unknown, at: number): Promise<void> {
+  const res = await authFetch("/api/profile/style", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ style, at }),
+  });
+  if (!res.ok) throw new Error("Could not save your look");
+}
+
 // ---------- Leaderboard ----------
 
 export type BoardScope = "all" | "week";
+export type BoardMetric = "score" | "streak" | "species" | "wild" | "rare" | "challenge";
 export type NameKind = "screen" | "real";
 
 export interface BoardEntry {
   rank: number;
   name: string;
   kind: NameKind;
+  value: number; // what this board ranks by
   score: number;
   cards: number;
   species: number;
+  wild: number; // different wild species
+  rare: number; // Rare or better cards
+  bestStreak: number;
   founder: boolean;
   creator: boolean;
   you: boolean;
 }
 
-export interface Board {
-  scope: BoardScope;
-  entries: BoardEntry[];
-  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number; founder: boolean; creator: boolean } | null;
-  total: number;
+export interface ChallengeInfo {
+  id: string;
+  title: string;
+  blurb: string;
+  goal: number;
+  unit: string;
+  week: string; // the Monday it started
 }
 
-export const getBoard = (scope: BoardScope) => getJson<Board>(`/api/leaderboard?scope=${scope}`);
+export interface Board {
+  scope: BoardScope;
+  metric: BoardMetric;
+  challenge: ChallengeInfo;
+  entries: BoardEntry[];
+  me: (Omit<BoardEntry, "rank" | "you"> & { rank: number | null }) | null;
+  total: number;
+  crew: { id: string; name: string } | null;
+}
+
+export const getBoard = (scope: BoardScope, metric: BoardMetric = "score", crew?: string | null) =>
+  getJson<Board>(`/api/leaderboard?scope=${scope}&metric=${metric}${crew ? `&crew=${encodeURIComponent(crew)}` : ""}`);
+
+// ---------- Crews and public pages ----------
+
+export interface Crew {
+  id: string;
+  name: string;
+  code: string;
+  members: number;
+  owner: boolean;
+}
+
+async function sendJson<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const res = await authFetch(path, { method, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error ?? "Something went wrong");
+  return data as T;
+}
+
+export const sendFeedback = (kind: "feedback" | "bug" | "idea", message: string, info: string) =>
+  sendJson<{ ok: true }>("/api/feedback", "POST", { kind, message, info });
+export const reportPlayer = (name: string, reason: "name" | "card" | "other") => sendJson<{ ok: true }>("/api/report", "POST", { name, reason });
+
+export interface AdminStats {
+  players: number;
+  onBoard: number;
+  crews: number;
+  cards: number;
+  wildShare: number;
+  activeToday: number;
+  activeWeek: number;
+  weekRetention: number | null;
+  retentionBase: number;
+  perDay: { day: string; catches: number; players: number }[];
+  feedback: { id: number; kind: string; message: string; app_info: string; created_at: string }[];
+  reports: { target_name: string; reason: string; reports: number; last: string }[];
+}
+export const getAdminStats = () => getJson<AdminStats>("/api/admin/stats");
+
+export const getCrews = () => getJson<{ crews: Crew[] }>("/api/crews").then((r) => r.crews);
+export const createCrew = (name: string) => sendJson<{ crew: Crew }>("/api/crews", "POST", { name }).then((r) => r.crew);
+export const joinCrew = (code: string) => sendJson<{ crew: Crew }>("/api/crews/join", "POST", { code }).then((r) => r.crew);
+export const leaveCrew = (id: string) => sendJson<{ ok: true }>(`/api/crews/${encodeURIComponent(id)}`, "DELETE").then(() => undefined);
+export const saveShowcase = (ids: string[]) => sendJson<{ ids: string[] }>("/api/showcase", "PUT", { ids }).then((r) => r.ids);
+
+export interface Player {
+  name: string;
+  kind: NameKind;
+  since: string;
+  creator: boolean;
+  founder: boolean;
+  stats: { cards: number; species: number; wild: number; rare: number; legendary: number; currentStreak: number; bestStreak: number; activeDays: number };
+  showcase: Card[];
+}
+
+export const getPlayer = (name: string) => getJson<{ player: Player }>(`/api/players/${encodeURIComponent(name)}`).then((r) => r.player);
 
 // Resolves to null on success, or the reason the name was refused.
 export async function joinBoard(kind: NameKind, name: string): Promise<string | null> {

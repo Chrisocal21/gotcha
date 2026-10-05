@@ -112,7 +112,35 @@ Each badge has four tiers: bronze, silver, gold, platinum.
 
 ### Field Tasks
 
-Three a day, the same for everyone, picked from the date. The first is always "Make a catch" (+200). The second is about volume (catch 3, catch 5, or 2 different species). The third is about variety, weighted toward the easy ones: a new species, a bird, a mammal, an Uncommon or better, a card scoring 250+, an insect or spider, a reptile, amphibian or fish, or a statue.
+Three rings a day, the same for everyone, picked from the date. They close at the explorer's own midnight. Ring 1 is "Catch 3 animals" (+250). Ring 2 is "Find a wild species" (+300): a species that is not a pet (anything not Domestic) and not a statue. Ring 3 rotates through variety tasks (a new species, a bird, a mammal, an Uncommon or better, a card scoring 250+, an insect or spider, a reptile, amphibian or fish, a statue, three different wild species) and never repeats two days running. Closing all three is a stamp (+500). Seven days make the week strip.
+
+## The Core Loop
+
+The loop that brings people back, like Fitbit rings and Pokemon GO: **go outside, find a real animal, catch it, see it count everywhere, and have a reason to go out again tomorrow.**
+
+1. A reason to go out: today's rings, a named animal to find ("Next to find", from the Field Guide), the weekly challenge, and a streak that is at risk in the evening.
+2. The catch: the photo becomes a card. A wild species pays extra (+75 XP) and marks the card "Wild species".
+3. Everything counts: the same card feeds XP, rings, badges (Outdoors group), the Field Guide, the weekly challenge, the journal trail and every leaderboard.
+4. A reason to come back: close the rings, finish the album (+1,000 XP), win the challenge (+1,000 XP), keep the streak, climb a board.
+5. Show it off: Share a card as a picture, pick up to three showcase cards for the public page, race a crew.
+
+Where each thing lives. The server decides what can be faked (the local day and daily limit, rarity, the wild flag, species, every leaderboard, crews, showcase). The app works out everything that is only for display (XP, levels, badges, rings, albums, challenge progress) from the cards, so a rule change never needs a migration. Rules both sides need (time zones, wild test, challenge pool) live once in `shared/`.
+
+### Weekly Challenge
+
+One per week (Monday to Sunday, in the explorer's time zone), the same for everyone, picked from a pool of 13 (for example Into the Wild: find 5 different wild species). +1,000 XP when finished. The Challenge board ranks everyone on this week's challenge.
+
+### Field Guide
+
+Ten albums of named animals (Backyard Birds, City Wildlife, Ponds and Parks, Pet Parade, Farmyard, Safari Legends, Ocean Life, Forest Folk, Bug Hunt, Scales and Ponds). A slot fills with your best card of that animal. Empty slots say where to look. Finishing an album pays +1,000 XP once.
+
+### Leaderboards and Crews
+
+Six boards: Score, Streak, Species, Wild, Rare finds, Challenge. Each for This week or All time (Streak shows Current or Best ever). Everyone, or a crew: a private group of up to 30 joined by a six-letter code (a person can be in 5). Tapping a name opens a public page with totals and up to three showcase cards. Nobody is listed without a chosen board name, and three different reports take a name off the boards.
+
+### Safety and Cost
+
+Photos go through OpenAI's free moderation check before the paid vision call. A photo of a screen or a printed picture is turned down kindly. A kill switch (`CATCHING_PAUSED`) and a global daily limit (`GLOBAL_DAILY_CAP`) stop spending. Testers send feedback in the app. The developer account has a private stats page.
 
 ---
 

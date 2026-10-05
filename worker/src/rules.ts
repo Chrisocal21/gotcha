@@ -61,27 +61,3 @@ export function applyBoost(traits: Traits, tier: Tier): Traits {
   for (const key of TRAIT_KEYS) out[key] = Math.round(traits[key] * (1 + BOOST[tier]));
   return out;
 }
-
-export function utcDay(date = new Date()): string {
-  return date.toISOString().slice(0, 10);
-}
-
-// The daily cap resets at midnight UTC until the timezone question is settled (Phase 2).
-export function nextUtcMidnight(now = new Date()): string {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString();
-}
-
-const DAY_MS = 86_400_000;
-
-// Consecutive UTC days with at least one catch, ending today or yesterday. Display only.
-export function countStreak(daysDesc: string[], today = utcDay()): number {
-  if (daysDesc.length === 0) return 0;
-  const yesterday = utcDay(new Date(Date.parse(`${today}T00:00:00Z`) - DAY_MS));
-  if (daysDesc[0] !== today && daysDesc[0] !== yesterday) return 0;
-  let streak = 1;
-  for (let i = 1; i < daysDesc.length; i++) {
-    if (Date.parse(`${daysDesc[i - 1]}T00:00:00Z`) - Date.parse(`${daysDesc[i]}T00:00:00Z`) !== DAY_MS) break;
-    streak++;
-  }
-  return streak;
-}

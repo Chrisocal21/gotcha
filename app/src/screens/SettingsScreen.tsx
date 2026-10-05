@@ -20,6 +20,7 @@ import {
 import { install, useInstallState } from "../lib/pwa";
 import { isSoundOn, setSoundOn } from "../lib/sfx";
 import { useTapCounter } from "../lib/eggs";
+import { CHALLENGE_XP } from "../../../shared/challenges";
 import { MEDALS, XP, type Progress } from "../lib/progress";
 import { BOOST, ODDS, TIERS, tierClass } from "../lib/tiers";
 import { LevelBadge, xpText } from "../components/game";
@@ -43,6 +44,7 @@ import {
 } from "../components/glyphs";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { CLERK_KEY, DEV_EMAIL } from "../components/AuthGate";
+import { FeedbackPage, StatsPage } from "./FeedbackPages";
 import { Group, Row, SubpageHeader } from "../components/SettingsList";
 import { Button, Segmented, Switch } from "../components/ui";
 
@@ -92,6 +94,8 @@ export default function SettingsScreen({
   if (topic === "odds") return <RarityAndOdds />;
   if (topic === "levels") return <LevelsAndBadges />;
   if (topic === "privacy") return <PrivacyAndSafety />;
+  if (topic === "feedback") return <FeedbackPage status={status} />;
+  if (topic === "stats") return <StatsPage />;
   return (
     <SettingsHome
       status={status}
@@ -130,27 +134,7 @@ function SettingsHome({
   const [haptics, setHapticsState] = useState(getHaptics);
   const [autoSave, setAutoSaveState] = useState(getAutoSave);
   const [gyro, setGyroState] = useState(getGyro);
-  const [copied, setCopied] = useState(false);
   const installState = useInstallState();
-
-  async function copyDiagnostics() {
-    const lines = [
-      `Gotcha ${__APP_VERSION__} (${import.meta.env.MODE})`,
-      `Time: ${new Date().toISOString()}`,
-      `Page: ${window.location.hash || "#/"}`,
-      `Theme: ${getTheme()}, reduce motion: ${getReduceMotion()}`,
-      `Screen: ${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x`,
-      `Catches today: ${status ? `${status.used}/${status.cap}` : "unknown"}`,
-      `Browser: ${navigator.userAgent}`,
-    ];
-    try {
-      await navigator.clipboard.writeText(lines.join("\n"));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      window.prompt("Copy this and send it along with your report:", lines.join("\n"));
-    }
-  }
 
   return (
     <div className="page max-w-[680px]">
@@ -272,7 +256,7 @@ function SettingsHome({
 
       <Group title="Help">
         <Row icon={IconReplay} tone={TONE.replay} title="Replay the welcome" onClick={onShowWelcome} />
-        <Row icon={IconReport} tone={TONE.report} title="Report a problem" detail={copied ? "Details copied. Paste them into your message." : "Copies details to send with your report"} onClick={copyDiagnostics} />
+        <Row icon={IconReport} tone={TONE.report} title="Send feedback" detail="Report a problem or share an idea" href="#/settings/feedback" />
         <Row icon={IconPrivacy} tone={TONE.privacy} title="Privacy and safety" href="#/settings/privacy" />
       </Group>
 
@@ -355,8 +339,11 @@ function LevelsAndBadges() {
     ["Rarity bonus", `+${XP.rarity.Uncommon} to +${XP.rarity.Legendary}`],
     ["A species you've never caught", `+${XP.newSpecies}`],
     ["Animals caught together, each extra one", `+${XP.together}`],
-    ["Each field task", "+200 to +500"],
-    ["All three tasks in a day", `+${XP.stamp}`],
+    ["A wild species (not a pet, not a statue)", `+${XP.wild}`],
+    ["Each field task", "+250 to +600"],
+    ["All three rings closed in a day", `+${XP.stamp}`],
+    ["The weekly challenge", `+${CHALLENGE_XP.toLocaleString("en-US")}`],
+    ["Finishing a Field Guide album", `+${XP.album.toLocaleString("en-US")}`],
   ];
   return (
     <div className="page max-w-[680px]">
@@ -488,6 +475,7 @@ function DeveloperTools({
           Remove
         </Button>
       </Row>
+      <Row icon={IconDeveloper} tone={TONE.developer} title="How testing is going" detail="Players, catches, feedback and reports" href="#/settings/stats" />
       {todo.length > 0 && (
         <Row
           icon={IconDeveloper}

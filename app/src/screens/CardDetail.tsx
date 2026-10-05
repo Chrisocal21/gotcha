@@ -3,14 +3,15 @@ import { scoreOf, TRAIT_KEYS, TRAIT_LABELS, type Card } from "../lib/api";
 import { classClass } from "../lib/classes";
 import { formatCaught, pad3, plural } from "../lib/format";
 import { useEscape, useSwipe } from "../lib/hooks";
-import { CLASS_NAMES, classKeyOf, type Progress } from "../lib/progress";
+import { CLASS_NAMES, classKeyOf, isWild, type Progress } from "../lib/progress";
 import { seriesName } from "../lib/series";
 import { boostLabel, ODDS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
 import { ClassEmblem, SectionTitle, xpText } from "../components/game";
-import { IconClose, IconNext, IconPrev } from "../components/glyphs";
+import CardActions from "../components/CardActions";
+import { IconClose, IconNext, IconPrev, IconWild } from "../components/glyphs";
 import PrintDialog from "../components/PrintDialog";
-import { Button, IconButton, Label, Panel } from "../components/ui";
+import { IconButton, Label, Panel } from "../components/ui";
 import CardZoom from "./CardZoom";
 
 // Boosted stats run up to 200 (100 times the Legendary boost), so bars use that scale.
@@ -96,11 +97,7 @@ export default function CardDetail({
               </p>
               <NavArrow dir="next" disabled={!next} onClick={goNext} />
             </div>
-            <div className="mt-3 flex justify-center">
-              <Button variant="secondary" size="sm" onClick={() => setPrinting(true)}>
-                Download for print
-              </Button>
-            </div>
+            <CardActions card={card} onPrint={() => setPrinting(true)} />
           </div>
 
           <div className="min-w-0 space-y-4">
@@ -115,6 +112,12 @@ export default function CardDetail({
                   <span className="tier-dot" />
                   {card.rarity}
                 </span>
+                {isWild(card) && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-canopy-soft px-3 py-1.5 text-[13.5px] font-semibold text-canopy shadow-soft">
+                    <IconWild size={15} strokeWidth={2.4} />
+                    Wild species
+                  </span>
+                )}
                 <span className="text-[13.5px] text-ink-3">Caught {formatCaught(card.createdAt)}</span>
               </div>
             </header>

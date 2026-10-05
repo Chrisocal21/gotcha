@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { ClerkProvider, SignIn, SignedIn, SignedOut, useAuth, useUser } from "@clerk/clerk-react";
 import { getProfile, saveProfile, setTokenGetter } from "../lib/api";
 import { getExplorerName, setExplorerName } from "../lib/prefs";
+import { startStyleSync } from "../lib/styleSync";
 import { CardFan } from "./GameCard";
 import Logo from "./Logo";
 import { SHOWCASE } from "../lib/showcase";
@@ -41,6 +42,12 @@ function Session({ children }: { children: ReactNode }) {
 
   // Set during render so the first requests from the app already carry the token.
   setTokenGetter(() => getToken());
+
+  // Their look follows them to every device they sign in on.
+  useEffect(() => {
+    if (!userId) return;
+    return startStyleSync();
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;

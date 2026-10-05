@@ -1,5 +1,7 @@
 import {
   Anchor,
+  BookOpen,
+  Building2,
   Binary,
   Binoculars,
   Bird,
@@ -39,6 +41,8 @@ import {
   Moon,
   MoonStar,
   Mountain,
+  Footprints,
+  Trees,
   Music,
   Palette,
   Panda,
@@ -159,6 +163,8 @@ const MEDAL_GLYPHS: Record<string, Glyph> = {
 
 const EXTRA_GLYPHS: Record<string, Glyph> = {
   Anchor,
+  BookOpen,
+  Building2,
   Binary,
   Bone,
   Calendar,
@@ -187,6 +193,8 @@ const EXTRA_GLYPHS: Record<string, Glyph> = {
   Moon,
   MoonStar,
   Mountain,
+  Footprints,
+  Trees,
   Music,
   Palette,
   Panda,
@@ -238,6 +246,7 @@ export {
   Flame as IconStreak,
   Layers as IconCollection,
   Plus as IconPlus,
+  Leaf as IconWild,
   Settings as IconSettings,
   X as IconClose,
 } from "lucide-react";
