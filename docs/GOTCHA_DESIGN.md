@@ -164,6 +164,21 @@ Three a day, the same for everyone, picked from the date. The first is always "M
 
 ---
 
+## Customizing
+
+Everything here changes the app only, never a card, and stays on the device. Style codes carry it all to a friend.
+
+- Every color setting (Main color, Catch button, Card back, Glow) has presets, a "+" that opens a color picker and a box for hex codes, and keeps the customs used lately. Gradient settings take one to three codes: one grows into a matching set of tones, two blend, three are used as given.
+- Background designs are whole-page looks drawn in plain CSS, no image files: 42 of them in a compact picker like the font one (arrows, or a grouped list with thumbnails). Groups: game consoles and handhelds, computers and the early web (Winamp, Buddy List, Teal 95), TV, toys and pop, paper and craft, glow. Dark designs switch the panels and text to their dark versions. A design replaces the Glow and Texture settings while it is on. Definitions live in app/src/lib/skins.ts.
+
+---
+
+## The App Icon
+
+Gotcha installs like an app (Settings, App, Install). Its icon is the spectrum "o" from the wordmark, the five rarity colors in order, on the card-back green. The files are generated PNGs in app/public (icon-192, icon-512, a maskable version for Android, and the iPhone icon). A small service worker keeps the app opening instantly and available offline, and never caches catches or cards.
+
+---
+
 ## Type
 
 | Role | Font | Where |

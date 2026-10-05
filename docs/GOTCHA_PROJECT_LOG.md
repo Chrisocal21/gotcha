@@ -183,6 +183,33 @@ Look over the changes, deploy the app and the Worker, then try one real photo wi
 
 ---
 
+## Gotcha -- Session -- 2026-10-04 (realignment)
+
+**Status:** Active
+
+---
+
+### What Happened
+
+- Session restarted after Chris did substantial work on his own: Clerk sign-in, a leaderboard with screen names, 99 badges with mystery badges and easter eggs, endless levels, print downloads, Founders Edition series, Creator and Founder tags, a softer light mode, the camera reusing the floating header and tab bar, a 16-font picker with live preview. Worker migrations 0004 to 0007 added.
+- Realigned by reading git history and the code. Everything is committed and pushed, and Vercel's latest production deploy matches the newest commit. The multi-animal catch and Pack Leader badge survived inside the new badge system.
+- Stopped my leftover mock test servers. Chris's dev servers were left alone.
+
+---
+
+### Documents Updated
+
+- GOTCHA_PROGRESS_TRACKER.md (Features 1.11 and 1.12, sign-in ticked, now 74%)
+- GOTCHA_PROJECT_LOG.md (this entry)
+
+---
+
+### Not Verified
+
+- That the Worker with migrations 0004 to 0007 and the Clerk secrets are live on Cloudflare (the Cloudflare connection was unavailable this session).
+
+---
+
 ## Build Rules
 
 - No HTML in any output
