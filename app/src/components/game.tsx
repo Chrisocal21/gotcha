@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { isSecret, tierLabel, type ClassKey, type MedalState, type Progress, type TaskState } from "../lib/progress";
-import { ClassGlyph, glyphFor, IconCheck, IconHowTo } from "./glyphs";
+import { ClassGlyph, glyphFor, IconCheck, IconFounder, IconHowTo } from "./glyphs";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 export const xpText = (n: number) => `${fmt(n)} XP`;
@@ -31,6 +31,16 @@ export function LevelBadge({
         {label && <span className="lvl__lv">Level</span>}
         <span className="lvl__num" data-wide={level >= 100 ? "" : undefined}>{level}</span>
       </span>
+    </span>
+  );
+}
+
+// The official Founders mark, worn by anyone who holds a Founders Edition card.
+export function FounderTag({ className = "" }: { className?: string }) {
+  return (
+    <span className={`founder-tag ${className}`} title="Founders Edition: here from the start">
+      <IconFounder size={12} strokeWidth={2.4} fill="currentColor" />
+      Founder
     </span>
   );
 }

@@ -230,6 +230,7 @@ export function ClassGlyph({ cls, ...props }: LucideProps & { cls: ClassKey }) {
 // Navigation and controls.
 export {
   Check as IconCheck,
+  Star as IconFounder,
   ChevronLeft as IconPrev,
   ChevronRight as IconNext,
   Compass as IconExplorer,

@@ -9,7 +9,7 @@ import { getExplorerName, setExplorerName } from "../lib/prefs";
 import { CLASS_NAMES, CLASS_ORDER, isSecret, MEDAL_TIERS, nextRank, XP, type DayLog, type MedalDef, type MedalState, type Progress } from "../lib/progress";
 import { ODDS, TIERS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
-import { ClassEmblem, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
+import { ClassEmblem, FounderTag, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
 import { Button, Panel, Segmented } from "../components/ui";
 import Leaderboard from "../components/Leaderboard";
 
@@ -93,8 +93,11 @@ function Hero({ p, streak }: { p: Progress; streak: number }) {
               <LevelBadge level={p.level} ratio={p.ratio} label className="hero__badge" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-semibold text-white/75">
-                Level {p.level} · {p.rank}
+              <div className="flex flex-wrap items-center gap-2 text-[13.5px] font-semibold text-white/75">
+                <span>
+                  Level {p.level} · {p.rank}
+                </span>
+                {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
               </div>
             {editing ? (
               <input

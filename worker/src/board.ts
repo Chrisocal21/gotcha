@@ -48,6 +48,7 @@ export interface BoardEntry {
   score: number;
   cards: number;
   species: number;
+  founder: boolean;
   you: boolean;
 }
 
@@ -57,6 +58,7 @@ const SCORE_SQL = `
   WITH board AS (
     SELECT p.user_id, p.board_name AS name, p.board_kind AS kind,
       COUNT(c.id) AS cards,
+      EXISTS (SELECT 1 FROM cards f WHERE f.user_id = p.user_id AND f.series = 'founders' AND f.is_sample = 0) AS founder,
       COUNT(DISTINCT lower(trim(c.species))) AS species,
       COUNT(c.id) * 100
         + COALESCE(SUM(CASE c.rarity WHEN 'Uncommon' THEN 50 WHEN 'Rare' THEN 150 WHEN 'Epic' THEN 400 WHEN 'Legendary' THEN 1000 ELSE 0 END), 0)
@@ -77,7 +79,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
   const { results } = await db
     .prepare(`${SCORE_SQL} SELECT * FROM board ORDER BY score DESC, cards DESC, name ASC LIMIT ${BOARD_LIMIT}`)
     .bind(species, since)
-    .all<{ user_id: string; name: string; kind: "screen" | "real"; cards: number; species: number; score: number }>();
+    .all<{ user_id: string; name: string; kind: "screen" | "real"; cards: number; species: number; score: number; founder: number }>();
 
   const entries: BoardEntry[] = results.map((r, i) => ({
     rank: i + 1,
@@ -86,6 +88,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
     score: r.score,
     cards: r.cards,
     species: r.species,
+    founder: !!r.founder,
     you: r.user_id === user,
   }));
 
@@ -96,7 +99,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
        FROM board b WHERE b.user_id = ?3`,
     )
     .bind(species, since, user)
-    .first<{ name: string; kind: "screen" | "real"; cards: number; species: number; score: number; rank: number; total: number }>();
+    .first<{ name: string; kind: "screen" | "real"; cards: number; species: number; score: number; rank: number; total: number; founder: number }>();
 
   const joined = await db
     .prepare("SELECT board_name, board_kind FROM profiles WHERE user_id = ?")
@@ -114,6 +117,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
           score: mine?.score ?? 0,
           cards: mine?.cards ?? 0,
           species: mine?.species ?? 0,
+          founder: !!mine?.founder,
         }
       : null,
     total: mine?.total ?? entries.length,

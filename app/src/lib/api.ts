@@ -181,13 +181,14 @@ export interface BoardEntry {
   score: number;
   cards: number;
   species: number;
+  founder: boolean;
   you: boolean;
 }
 
 export interface Board {
   scope: BoardScope;
   entries: BoardEntry[];
-  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number } | null;
+  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number; founder: boolean } | null;
   total: number;
 }
 
