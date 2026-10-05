@@ -69,7 +69,7 @@ export default function Leaderboard() {
           <div className="min-w-0">
             <div className="text-[12.5px] font-semibold text-ink-3">You appear as</div>
             <div className="flex items-center gap-2 font-display text-[19px] font-bold">\n              <span className="truncate">{me.name}</span>\n              {me.creator && <CreatorTag />}
-              {me.founder && !me.creator && <FounderTag />}\n            </div>
+              {me.founder && <FounderTag />}\n            </div>
           </div>
           <div className="flex items-center gap-5 text-right">
             <Stat label="Rank" value={me.rank ? `#${fmt(me.rank)}` : "None yet"} />
@@ -141,7 +141,7 @@ function Row({ e, gap = false }: { e: BoardEntry; gap?: boolean }) {
         <div className="flex items-center gap-2 text-[15px] font-bold">
           <span className="truncate">{e.name}</span>
           {e.creator && <CreatorTag />}
-          {e.founder && !e.creator && <FounderTag />}
+          {e.founder && <FounderTag />}
           {e.you && <span className="text-[12px] font-semibold text-xp-ink">You</span>}
         </div>
         <div className="text-[12.5px] text-ink-3 tabular">
