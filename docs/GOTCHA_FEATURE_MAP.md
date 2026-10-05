@@ -140,3 +140,9 @@ Nothing below matters until Step Zero holds up.
 - No HTML in any output
 - No emojis in any output
 - SVG icons only when genuinely needed
+
+## Series
+
+- Every card records the series it was caught in (cards.series, CURRENT_SERIES in worker/src/rules.ts).
+- **Founders Edition** is everything caught before public launch. It closes on launch day and can never be earned again. Perks are cosmetic and status only (gold edition mark, Founding Member badge, tradable later). Odds, stats and the daily cap are never changed by a series.
+- Public launch starts Series One, then Series Two and on, each about 3 months with its own theme and frame.

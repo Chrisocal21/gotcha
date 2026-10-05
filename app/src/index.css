@@ -1925,6 +1925,16 @@ button:disabled {
     inset 0 -1.6cqw 0 rgb(0 0 0 / 0.18),
     0 0 8cqw 1cqw var(--tier);
 }
+.gcard--framed .gcard__founders {
+  color: #8a5d00;
+}
+.gback__series--founders {
+  color: #f3c244;
+}
+.gcard__founders {
+  color: #f3c244;
+  font-weight: 700;
+}
 .gback__series {
   margin-top: -4cqw;
   font-family: var(--font-mono);

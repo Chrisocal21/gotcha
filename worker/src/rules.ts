@@ -1,5 +1,8 @@
 // Locked rules from docs/GOTCHA_FEATURE_MAP.md. Change them there first.
 
+// The series new cards are stamped with. Flip this when the next series starts (Founders closes at public launch).
+export const CURRENT_SERIES = "founders";
+
 export const TIERS = ["Common", "Uncommon", "Rare", "Epic", "Legendary"] as const;
 export type Tier = (typeof TIERS)[number];
 

@@ -5,6 +5,7 @@ import { pad3 } from "../lib/format";
 import { classKeyOf } from "../lib/progress";
 import { BOOST, ODDS, tierClass, tierRank } from "../lib/tiers";
 import { ClassGlyph } from "./glyphs";
+import { isFounders, seriesName } from "../lib/series";
 import Logo from "./Logo";
 
 export type CardFace = Pick<
@@ -14,6 +15,7 @@ export type CardFace = Pick<
   | "species"
   | "isStatue"
   | "isSample"
+  | "series"
   | "animalClass"
   | "rarity"
   | "stats"
@@ -159,7 +161,7 @@ export function CardFront({
             <span>
               No. {pad3(card.number)} · {caughtOn(card.createdAt)}
             </span>
-            <span>{card.isSample ? "Sample card" : "Series one"}</span>
+            <span className={card.isSample ? "" : isFounders(card.series) ? "gcard__founders" : ""}>{card.isSample ? "Sample card" : seriesName(card.series)}</span>
           </div>
 
           <div className="gcard__glare" />
@@ -239,7 +241,7 @@ export function CardStats({ card, className = "" }: { card: Card; className?: st
 }
 
 // The back of every card: the catch button's spectrum ring and sun core, on your chosen card-back color.
-export function CardBack({ className = "" }: { className?: string }) {
+export function CardBack({ className = "", series }: { className?: string; series?: string }) {
   return (
     <div className={`card-box ${className}`}>
       <div className="gback">
@@ -248,7 +250,7 @@ export function CardBack({ className = "" }: { className?: string }) {
             <span className="gback__core" />
           </div>
           <Logo />
-          <span className="gback__series">Series one</span>
+          <span className={`gback__series ${isFounders(series) ? "gback__series--founders" : ""}`}>{seriesName(series)}</span>
         </div>
       </div>
     </div>

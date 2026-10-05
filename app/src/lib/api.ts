@@ -35,6 +35,7 @@ export interface Card {
   species: string;
   isStatue: boolean;
   isSample: boolean;
+  series?: string;
   animalClass: AnimalClass;
   rarity: Tier;
   description: string;

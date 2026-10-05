@@ -4,6 +4,7 @@ import { classClass } from "../lib/classes";
 import { formatCaught, pad3, plural } from "../lib/format";
 import { useEscape, useSwipe } from "../lib/hooks";
 import { CLASS_NAMES, classKeyOf, type Progress } from "../lib/progress";
+import { seriesName } from "../lib/series";
 import { boostLabel, ODDS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
 import { ClassEmblem, SectionTitle, xpText } from "../components/game";
@@ -256,7 +257,7 @@ function CatchRecord({ card, progress, onMove }: { card: Card; progress: Progres
         <dd className="text-right">{formatCaught(card.createdAt)}</dd>
         <dt className="text-ink-3">Card</dt>
         <dd className="text-right">
-          No. {pad3(card.number)}, {card.isSample ? "sample card" : "series one"}
+          No. {pad3(card.number)}, {card.isSample ? "sample card" : seriesName(card.series)}
         </dd>
         {entry && (
           <>

@@ -1,6 +1,7 @@
 import type { AnimalClass, Card } from "./api";
 import { scoreOf } from "./api";
 import { collectionFacts, MEDALS, secretFlags, type MedalDef, type Totals } from "./badges";
+import { isFounders } from "./series";
 import { TIERS, tierRank, type Tier } from "./tiers";
 
 /*
@@ -354,6 +355,7 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs 
   });
   const totals: Totals = {
     cards: cards.length,
+    founders: cards.filter((c) => isFounders(c.series)).length,
     species: seen.size,
     level: levelFor(xp).level,
     bestStreak,

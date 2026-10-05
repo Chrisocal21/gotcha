@@ -1,4 +1,4 @@
-﻿import type { Card } from "./api";
+import type { Card } from "./api";
 import { scoreOf } from "./api";
 import { tierRank, type Tier } from "./tiers";
 
@@ -31,6 +31,7 @@ export interface MedalDef {
 
 export interface Totals {
   cards: number;
+  founders: number;
   species: number;
   level: number;
   bestStreak: number;
@@ -277,6 +278,7 @@ const tiered = (m: Omit<MedalDef, "group"> & { group?: MedalDef["group"] }): Med
 
 export const MEDALS: MedalDef[] = [
   tiered({ id: "collector", name: "Collector", blurb: "Cards caught", unit: "cards", glyph: "cards", color: "#0f6e53", goals: [10, 50, 200, 1000, 3000, 10000], metric: (t) => t.cards }),
+  tiered({ id: "founder", name: "Founding Member", blurb: "Founders Edition cards", unit: "cards", glyph: "Medal", color: "#b8860b", goals: [1, 10, 50, 200, 500, 1000], metric: (t) => t.founders }),
   tiered({ id: "naturalist", name: "Naturalist", blurb: "Species discovered", unit: "species", glyph: "species", color: "#3f8f3a", goals: [5, 25, 75, 200, 500, 1500], metric: (t) => t.species }),
   tiered({ id: "ascendant", name: "Ascendant", blurb: "Explorer level", unit: "level", glyph: "Mountain", color: "#2f6fd6", goals: [5, 10, 25, 50, 100, 200], metric: (t) => t.level }),
   tiered({ id: "devoted", name: "Devoted", blurb: "Longest day streak", unit: "days", glyph: "streak", color: "#e5641a", goals: [3, 7, 30, 100, 365, 1000], metric: (t) => t.bestStreak, group: "habit" }),

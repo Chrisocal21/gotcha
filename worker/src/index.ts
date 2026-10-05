@@ -11,6 +11,7 @@ import {
   utcDay,
   ANIMAL_CLASSES,
   BOOST,
+  CURRENT_SERIES,
   ODDS,
   TIERS,
   type Tier,
@@ -63,6 +64,7 @@ function rowToCard(r: any) {
     species: r.species,
     isStatue: !!r.is_statue,
     isSample: !!r.is_sample,
+    series: r.series ?? "founders",
     animalClass: r.animal_class,
     rarity: r.rarity,
     description: r.description,
@@ -168,7 +170,7 @@ async function handleCatch(req: Request, env: Env, user: string) {
     ...cards.map((c) =>
       env.DB.prepare(
         `INSERT INTO cards (id, user_id, name, species, is_statue, is_sample, animal_class, rarity, description, traits,
-          stats, special_name, special_description, art_key, created_at, facts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          stats, special_name, special_description, art_key, created_at, facts, series) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       ).bind(
         c.id,
         user,
@@ -186,6 +188,7 @@ async function handleCatch(req: Request, env: Env, user: string) {
         c.artKey,
         createdAt,
         JSON.stringify(c.find.facts ?? {}),
+        CURRENT_SERIES,
       ),
     ),
     env.DB.prepare(
