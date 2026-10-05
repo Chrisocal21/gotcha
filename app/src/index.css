@@ -14,13 +14,13 @@
   --font-sans: "Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-sand: #f2ede3;
-  --color-paper: #ffffff;
-  --color-paper-2: #f8f5ef;
-  --color-paper-3: #efe9dd;
-  --color-ink: #17211c;
-  --color-ink-2: #55615a;
-  --color-ink-3: #8b948e;
+  --color-sand: #e4ddcc;
+  --color-paper: #f1ece0;
+  --color-paper-2: #e9e3d4;
+  --color-paper-3: #ddd5c3;
+  --color-ink: #1f2a24;
+  --color-ink-2: #4b564f;
+  --color-ink-3: #737d76;
   --color-line: rgb(23 33 28 / 0.09);
   --color-line-strong: rgb(23 33 28 / 0.16);
 
@@ -77,14 +77,14 @@
   --color-canopy-2: color-mix(in oklab, var(--accent), black 18%);
   --color-canopy-soft: color-mix(in oklab, var(--accent) 14%, var(--color-paper));
   --sun-gradient: linear-gradient(135deg, var(--action-1) 0%, var(--action-2) 48%, var(--action-3) 100%);
-  --glow-1: color-mix(in srgb, var(--bg-a) 65%, transparent);
-  --glow-2: color-mix(in srgb, var(--bg-b) 55%, transparent);
-  --glow-3: color-mix(in srgb, var(--bg-c) 50%, transparent);
+  --glow-1: color-mix(in srgb, var(--bg-a) 38%, transparent);
+  --glow-2: color-mix(in srgb, var(--bg-b) 30%, transparent);
+  --glow-3: color-mix(in srgb, var(--bg-c) 28%, transparent);
 
   --spectrum: var(--color-common), var(--color-uncommon), var(--color-rare), var(--color-epic), var(--color-legendary);
   --xp-gradient: linear-gradient(90deg, #5be3c0 0%, #17b89c 55%, #0f9db0 100%);
   --track: rgb(23 33 28 / 0.09);
-  --hover: rgb(255 255 255 / 0.6);
+  --hover: rgb(255 255 255 / 0.35);
   --glass: rgb(12 20 17 / 0.42);
   color-scheme: light;
 }
