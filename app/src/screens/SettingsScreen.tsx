@@ -38,6 +38,8 @@ import {
   IconTrophy,
   IconVibrate,
 } from "../components/glyphs";
+import { UserButton, useUser } from "@clerk/clerk-react";
+import { CLERK_KEY, DEV_EMAIL } from "../components/AuthGate";
 import { Group, Row, SubpageHeader } from "../components/SettingsList";
 import { Button, Segmented, Switch } from "../components/ui";
 
@@ -113,6 +115,10 @@ function SettingsHome({
   refreshCollection: () => Promise<unknown>;
   onShowWelcome: () => void;
 }) {
+  const { user } = useUser();
+  const isDeveloper = !!user?.emailAddresses.some(
+    (e) => e.verification?.status === "verified" && e.emailAddress.toLowerCase() === DEV_EMAIL,
+  );
   const [theme, setThemeState] = useState(getTheme);
   const [calm, setCalm] = useState(getReduceMotion);
   const [sound, setSound] = useState(isSoundOn);
@@ -155,6 +161,14 @@ function SettingsHome({
           </span>
           <IconNext size={18} className="text-ink-3" />
         </a>
+      )}
+
+      {CLERK_KEY && (
+        <Group title="Account">
+          <Row icon={IconPrivacy} tone={TONE.privacy} title="Signed in" detail="Manage your account or sign out">
+            <UserButton />
+          </Row>
+        </Group>
       )}
 
       <Group title="Appearance">
@@ -244,7 +258,7 @@ function SettingsHome({
         <Row icon={IconPrivacy} tone={TONE.privacy} title="Privacy and safety" href="#/settings/privacy" />
       </Group>
 
-      {import.meta.env.DEV && (
+      {isDeveloper && (
         <DeveloperTools status={status} collection={collection} refreshStatus={refreshStatus} refreshCollection={refreshCollection} />
       )}
 

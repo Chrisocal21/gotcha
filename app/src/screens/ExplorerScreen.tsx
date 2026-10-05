@@ -2,6 +2,8 @@ import { useState, type CSSProperties } from "react";
 import type { Status } from "../lib/api";
 import { countdown, plural } from "../lib/format";
 import { useNow } from "../lib/hooks";
+import { saveProfile } from "../lib/api";
+import { CLERK_KEY } from "../components/AuthGate";
 import { getExplorerName, setExplorerName } from "../lib/prefs";
 import { CLASS_NAMES, CLASS_ORDER, MEDAL_TIERS, XP, type DayLog, type MedalState, type Progress } from "../lib/progress";
 import { ODDS, TIERS, tierClass } from "../lib/tiers";
@@ -72,6 +74,7 @@ function Hero({ p, streak }: { p: Progress; streak: number }) {
   function save(value: string) {
     setExplorerName(value);
     setName(value.trim().slice(0, 24));
+    if (CLERK_KEY) saveProfile({ displayName: value.trim().slice(0, 24) }).catch(() => {});
     setEditing(false);
   }
 

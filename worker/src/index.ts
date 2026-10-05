@@ -1,3 +1,4 @@
+import { authenticate, isDeveloper, type AuthEnv } from "./auth";
 import { analyzePhoto, illustrate, sampleDescription, type AiEnv, type ArtMode } from "./ai";
 import {
   applyBoost,
@@ -14,16 +15,11 @@ import {
   type Tier,
 } from "./rules";
 
-interface Env extends AiEnv {
+interface Env extends AiEnv, AuthEnv {
   DB: D1Database;
   ART: R2Bucket;
   DAILY_CAP: string;
 }
-
-// Hardcoded while testing (Feature 1.5). Clerk replaces this later.
-const TEST_USER = "test-user-1";
-
-const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -233,21 +229,32 @@ async function paintSample(env: Env, user: string, id: string) {
   return json({ card: rowToCard(updated) });
 }
 
+async function handleGetProfile(env: Env, user: string) {
+  const row = await env.DB.prepare("SELECT display_name FROM profiles WHERE user_id = ?")
+    .bind(user)
+    .first<{ display_name: string }>();
+  return json({ profile: row ? { displayName: row.display_name } : null });
+}
+
+async function handlePutProfile(req: Request, env: Env, user: string) {
+  const body = (await req.json().catch(() => null)) as { displayName?: unknown } | null;
+  if (typeof body?.displayName !== "string") return json({ error: "displayName is required" }, 400);
+  const displayName = body.displayName.trim().slice(0, 24);
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO profiles (user_id, display_name, created_at, updated_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT (user_id) DO UPDATE SET display_name = excluded.display_name, updated_at = excluded.updated_at`,
+  )
+    .bind(user, displayName, now, now)
+    .run();
+  return json({ profile: { displayName } });
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
-    const user = TEST_USER;
-
     try {
-      if (path === "/api/status" && req.method === "GET") return await handleStatus(env, user);
-      if (path === "/api/catch" && req.method === "POST") return await handleCatch(req, env, user);
-      if (path === "/api/cards" && req.method === "GET") return await handleCollection(env, user);
-      const cardMatch = path.match(/^\/api\/cards\/([\w-]+)$/);
-      if (cardMatch && req.method === "GET") {
-        const row = await env.DB.prepare(CARD_WITH_NUMBER).bind(cardMatch[1], user).first();
-        return row ? json({ card: rowToCard(row) }) : json({ error: "Not found" }, 404);
-      }
       const artMatch = path.match(/^\/api\/art\/([\w.-]+)$/);
       if (artMatch && req.method === "GET") {
         const obj = await env.ART.get(artMatch[1]);
@@ -259,8 +266,25 @@ export default {
           },
         });
       }
-      // Testing helpers. Only answer on this computer, never on a deployed Worker.
-      if (path.startsWith("/api/dev/") && LOCAL_HOSTS.includes(url.hostname) && req.method === "POST") {
+
+      const user = await authenticate(req, env);
+      if (!user) return json({ error: "Sign in required" }, 401);
+
+      if (path === "/api/status" && req.method === "GET") return await handleStatus(env, user);
+      if (path === "/api/profile") {
+        if (req.method === "GET") return await handleGetProfile(env, user);
+        if (req.method === "PUT") return await handlePutProfile(req, env, user);
+      }
+      if (path === "/api/catch" && req.method === "POST") return await handleCatch(req, env, user);
+      if (path === "/api/cards" && req.method === "GET") return await handleCollection(env, user);
+      const cardMatch = path.match(/^\/api\/cards\/([\w-]+)$/);
+      if (cardMatch && req.method === "GET") {
+        const row = await env.DB.prepare(CARD_WITH_NUMBER).bind(cardMatch[1], user).first();
+        return row ? json({ card: rowToCard(row) }) : json({ error: "Not found" }, 404);
+      }
+      // Testing helpers, only for the developer account.
+      if (path.startsWith("/api/dev/") && req.method === "POST") {
+        if (!(await isDeveloper(env, user))) return json({ error: "Not found" }, 404);
         if (path === "/api/dev/reset-cap") {
           await env.DB.prepare("DELETE FROM daily_counts WHERE user_id = ?").bind(user).run();
           return json({ ok: true });

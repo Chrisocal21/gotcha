@@ -1,2 +1,6 @@
 # Copy to .dev.vars and fill in. Without a key the Worker runs in mock mode.
 OPENAI_API_KEY=
+# Clerk secret key (sk_test_...). Required: every request must be signed in.
+CLERK_SECRET_KEY=
+# The one account that sees the developer tools.
+DEV_EMAIL=

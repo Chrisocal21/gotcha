@@ -80,8 +80,36 @@ export type CatchResult =
   | { status: "capped"; used: number; cap: number; resetsAt: string }
   | { status: "error"; message: string };
 
+// Set by the sign-in wrapper; stays null when Clerk isn't configured.
+let getToken: (() => Promise<string | null>) | null = null;
+export const setTokenGetter = (fn: (() => Promise<string | null>) | null) => {
+  getToken = fn;
+};
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// The session token can lag a moment behind sign-in, so wait for it, and retry once with a fresh one if the server refuses.
+async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  let token: string | null = null;
+  for (let i = 0; getToken && !token && i < 10; i++) {
+    token = await getToken();
+    if (!token) await sleep(200);
+  }
+  const send = (t: string | null) => {
+    const headers = new Headers(init.headers);
+    if (t) headers.set("Authorization", `Bearer ${t}`);
+    return fetch(path, { ...init, headers });
+  };
+  const res = await send(token);
+  if (res.status === 401 && getToken) {
+    await sleep(300);
+    return send(await getToken());
+  }
+  return res;
+}
+
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(path);
+  const res = await authFetch(path);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
   return res.json();
 }
@@ -94,23 +122,23 @@ export async function sendCatch(photo: Blob): Promise<CatchResult> {
   const form = new FormData();
   form.append("photo", photo, "photo.jpg");
   try {
-    const res = await fetch("/api/catch", { method: "POST", body: form });
+    const res = await authFetch("/api/catch", { method: "POST", body: form });
     return await res.json();
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : "Network error" };
   }
 }
 
-export const resetCap = () => fetch("/api/dev/reset-cap", { method: "POST" });
+export const resetCap = () => authFetch("/api/dev/reset-cap", { method: "POST" });
 
 export async function clearSamples(): Promise<number> {
-  const res = await fetch("/api/dev/clear-samples", { method: "POST" });
+  const res = await authFetch("/api/dev/clear-samples", { method: "POST" });
   if (!res.ok) throw new Error("Could not remove sample cards");
   return (await res.json()).deleted;
 }
 
 export async function paintSample(id: string): Promise<Card> {
-  const res = await fetch(`/api/dev/paint-sample/${id}`, { method: "POST" });
+  const res = await authFetch(`/api/dev/paint-sample/${id}`, { method: "POST" });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error ?? body.message ?? "Could not paint this card");
   return body.card;
@@ -123,3 +151,19 @@ export const scoreOf = (stats: Traits) => TRAIT_KEYS.reduce((sum, k) => sum + st
 
 export const boosted = (traits: Traits, tier: Tier): Traits =>
   Object.fromEntries(TRAIT_KEYS.map((k) => [k, Math.round(traits[k] * (1 + BOOST[tier]))])) as Traits;
+
+export interface Profile {
+  displayName: string;
+}
+
+export const getProfile = () => getJson<{ profile: Profile | null }>("/api/profile").then((r) => r.profile);
+
+export async function saveProfile(profile: Profile): Promise<Profile> {
+  const res = await authFetch("/api/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error("Could not save your profile");
+  return (await res.json()).profile;
+}
