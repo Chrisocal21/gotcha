@@ -283,7 +283,7 @@ export default {
       if (path.startsWith("/api/leaderboard") && (await isDeveloper(env, user))) {
         // The creator tag is granted here, from the verified developer account, and never from the app.
         const now = new Date().toISOString();
-        await env.DB.prepare(`INSERT INTO profiles (user_id, display_name, created_at, updated_at, role) VALUES (?1, ``, ?2, ?2, 'creator')
+        await env.DB.prepare(`INSERT INTO profiles (user_id, display_name, created_at, updated_at, role) VALUES (?1, '', ?2, ?2, 'creator')
           ON CONFLICT (user_id) DO UPDATE SET role = 'creator'`).bind(user, now).run();
       }
       if (path === "/api/leaderboard" && req.method === "GET") {
