@@ -93,13 +93,15 @@ function Hero({ p, streak, creator }: { p: Progress; streak: number; creator: bo
               <LevelBadge level={p.level} ratio={p.ratio} label className="hero__badge" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2 text-[13.5px] font-semibold text-white/75">
-                <span>
-                  Level {p.level} · {p.rank}
-                </span>
-                {creator && <CreatorTag />}
-                {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
+              <div className="text-[13.5px] font-semibold text-white/75">
+                Level {p.level} · {p.rank}
               </div>
+              {(creator || (p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0) && (
+                <div className="mt-1.5 flex flex-nowrap items-center gap-1.5">
+                  {creator && <CreatorTag />}
+                  {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
+                </div>
+              )}
             {editing ? (
               <input
                 autoFocus
