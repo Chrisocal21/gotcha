@@ -46,7 +46,7 @@ export default function CustomizeScreen() {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         {/* Always in view, even on a phone: change anything below and watch this change. */}
         <div className="sticky top-[70px] z-20 -mx-1 mb-4 lg:top-24 lg:order-2 lg:mx-0">
-          <Preview />
+          <Preview font={style.font} />
         </div>
 
         <div className="min-w-0 lg:order-1">
@@ -107,25 +107,28 @@ export default function CustomizeScreen() {
         </ControlRow>
         <div className="custom-row">
           <div className="text-[15.5px] font-semibold">Font</div>
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          <div className="text-[13px] text-ink-3">Tap one and watch the preview change. Each name is shown in its own font.</div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {(Object.keys(FONTS) as FontKey[]).map((key) => (
               <button
                 key={key}
                 onClick={() => update({ font: key })}
                 aria-pressed={style.font === key}
-                className={`rounded-2xl border px-3 py-2.5 text-left transition ${
+                className={`rounded-2xl border px-3.5 py-3 text-left transition ${
                   style.font === key ? "border-canopy bg-canopy-soft" : "border-line hover:border-line-strong"
                 }`}
               >
-                <div className="text-[20px] leading-none font-extrabold" style={{ fontFamily: FONTS[key].display }}>
-                  Aa
-                </div>
-                <div className="mt-1.5 text-[12.5px] font-semibold text-ink-2" style={{ fontFamily: FONTS[key].sans }}>
+                <div className="text-[19px] leading-tight font-extrabold break-words" style={{ fontFamily: FONTS[key].display }}>
                   {FONTS[key].name}
                 </div>
+                <div className="mt-1 truncate text-[13px] text-ink-2" style={{ fontFamily: FONTS[key].sans }}>
+                  The quick brown fox
+                </div>
+                <div className="mt-1.5 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
+                  {FONTS[key].scope === "all" ? "Whole app" : "Headings"}
+                </div>
               </button>
-            ))}
-          </div>
+            ))}          </div>
         </div>
       </Group>
 
@@ -194,7 +197,7 @@ export default function CustomizeScreen() {
 }
 
 // A small sample of the app that restyles with every change: your name, the fonts, the buttons, the corners and the card back.
-function Preview() {
+function Preview({ font }: { font: FontKey }) {
   const name = getExplorerName() || "Explorer";
   return (
     <div className="flex items-center gap-4 rounded-(--r-panel) border border-line bg-paper p-3.5 shadow-lift lg:flex-col lg:items-stretch lg:gap-4 lg:p-5">
@@ -202,7 +205,7 @@ function Preview() {
         <CardBack />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Live preview</div>
+        <div className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Live preview · {FONTS[font].name}</div>
         <div className="truncate font-display text-[22px] leading-tight font-extrabold tracking-tight lg:text-[30px]">{name}</div>
         <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:text-[14.5px]">Every animal becomes a card. Catch them all.</p>
         <div className="mt-2.5 hidden h-2 overflow-hidden rounded-full bg-paper-3 lg:block">

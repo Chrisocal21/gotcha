@@ -3,7 +3,23 @@
 
 export type Pattern = "none" | "dots" | "stripes" | "checks";
 export type Corners = "sharp" | "soft" | "bubble";
-export type FontKey = "default" | "editorial" | "clean" | "techy" | "playful";
+export type FontKey =
+  | "default"
+  | "clean"
+  | "inter"
+  | "poppins"
+  | "nunito"
+  | "quicksand"
+  | "space"
+  | "playful"
+  | "editorial"
+  | "lora"
+  | "merriweather"
+  | "oswald"
+  | "caveat"
+  | "pacifico"
+  | "techy"
+  | "jetbrains";
 
 export interface Style {
   accent: string;
@@ -62,14 +78,30 @@ export const CORNERS: Record<Corners, { name: string; panel: string; btn: string
 
 const BRICOLAGE = '"Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif';
 const FIGTREE = '"Figtree Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
-export const FONTS: Record<FontKey, { name: string; display: string; sans: string }> = {
-  default: { name: "Classic", display: BRICOLAGE, sans: FIGTREE },
-  editorial: { name: "Editorial", display: 'Georgia, "Times New Roman", serif', sans: FIGTREE },
-  clean: { name: "Clean", display: FIGTREE, sans: FIGTREE },
-  techy: { name: "Techy", display: '"DM Mono", ui-monospace, Menlo, monospace', sans: FIGTREE },
-  playful: { name: "Playful", display: BRICOLAGE, sans: BRICOLAGE },
-};
+const stack = (family: string, fallback: string) => `"${family}", ${fallback}`;
+const SANS = "ui-sans-serif, system-ui, sans-serif";
+const SERIF = "Georgia, serif";
+const MONO = "ui-monospace, Menlo, monospace";
 
+// "all" restyles every word in the app; "headings" only the big titles and numbers.
+export const FONTS: Record<FontKey, { name: string; display: string; sans: string; scope: "all" | "headings" }> = {
+  default: { name: "Bricolage Grotesque", display: BRICOLAGE, sans: FIGTREE, scope: "headings" },
+  clean: { name: "Figtree", display: FIGTREE, sans: FIGTREE, scope: "all" },
+  inter: { name: "Inter", display: stack("Inter Variable", SANS), sans: stack("Inter Variable", SANS), scope: "all" },
+  poppins: { name: "Poppins", display: stack("Poppins", SANS), sans: stack("Poppins", SANS), scope: "all" },
+  nunito: { name: "Nunito", display: stack("Nunito Variable", SANS), sans: stack("Nunito Variable", SANS), scope: "all" },
+  quicksand: { name: "Quicksand", display: stack("Quicksand Variable", SANS), sans: stack("Quicksand Variable", SANS), scope: "all" },
+  space: { name: "Space Grotesk", display: stack("Space Grotesk Variable", SANS), sans: stack("Space Grotesk Variable", SANS), scope: "all" },
+  playful: { name: "Fredoka", display: stack("Fredoka Variable", SANS), sans: stack("Fredoka Variable", SANS), scope: "all" },
+  editorial: { name: "Playfair Display", display: stack("Playfair Display Variable", SERIF), sans: FIGTREE, scope: "headings" },
+  lora: { name: "Lora", display: stack("Lora Variable", SERIF), sans: FIGTREE, scope: "headings" },
+  merriweather: { name: "Merriweather", display: stack("Merriweather Variable", SERIF), sans: FIGTREE, scope: "headings" },
+  oswald: { name: "Oswald", display: stack("Oswald Variable", SANS), sans: FIGTREE, scope: "headings" },
+  caveat: { name: "Caveat", display: stack("Caveat Variable", "cursive"), sans: FIGTREE, scope: "headings" },
+  pacifico: { name: "Pacifico", display: stack("Pacifico", "cursive"), sans: FIGTREE, scope: "headings" },
+  techy: { name: "DM Mono", display: '"DM Mono", ui-monospace, Menlo, monospace', sans: FIGTREE, scope: "headings" },
+  jetbrains: { name: "JetBrains Mono", display: stack("JetBrains Mono Variable", MONO), sans: stack("JetBrains Mono Variable", MONO), scope: "all" },
+};
 export const PATTERNS: { value: Pattern; label: string }[] = [
   { value: "none", label: "None" },
   { value: "dots", label: "Dots" },
