@@ -94,6 +94,7 @@ async function handleStatus(env: Env, user: string) {
     mock: !env.OPENAI_API_KEY,
     resetsAt: nextUtcMidnight(),
     streak: await streakFor(env, user),
+    creator: await isDeveloper(env, user),
     caughtToday: latest ? latest.created_at.slice(0, 10) === utcDay() : false,
     totalCards: latest?.total ?? 0,
     latest: latest ? { artUrl: `/api/art/${latest.art_key}`, rarity: latest.rarity } : null,
@@ -278,6 +279,12 @@ export default {
       if (path === "/api/profile") {
         if (req.method === "GET") return await handleGetProfile(env, user);
         if (req.method === "PUT") return await handlePutProfile(req, env, user);
+      }
+      if (path.startsWith("/api/leaderboard") && (await isDeveloper(env, user))) {
+        // The creator tag is granted here, from the verified developer account, and never from the app.
+        const now = new Date().toISOString();
+        await env.DB.prepare(`INSERT INTO profiles (user_id, display_name, created_at, updated_at, role) VALUES (?1, ``, ?2, ?2, 'creator')
+          ON CONFLICT (user_id) DO UPDATE SET role = 'creator'`).bind(user, now).run();
       }
       if (path === "/api/leaderboard" && req.method === "GET") {
         return json(await loadBoard(env.DB, user, url.searchParams.get("scope") === "week" ? "week" : "all"));

@@ -9,7 +9,7 @@ import { getExplorerName, setExplorerName } from "../lib/prefs";
 import { CLASS_NAMES, CLASS_ORDER, isSecret, MEDAL_TIERS, nextRank, XP, type DayLog, type MedalDef, type MedalState, type Progress } from "../lib/progress";
 import { ODDS, TIERS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
-import { ClassEmblem, FounderTag, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
+import { ClassEmblem, CreatorTag, FounderTag, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
 import { Button, Panel, Segmented } from "../components/ui";
 import Leaderboard from "../components/Leaderboard";
 
@@ -50,7 +50,7 @@ export default function ExplorerScreen({
   }
   return (
     <div className="page max-w-[1080px]">
-      <Hero p={progress} streak={status?.streak ?? progress.currentStreak} />
+      <Hero p={progress} streak={status?.streak ?? progress.currentStreak} creator={!!status?.creator} />
       <div className="mt-6 flex justify-center lg:justify-start">
         <Segmented value={tab} onChange={setTab} options={TABS} />
       </div>
@@ -72,7 +72,7 @@ export default function ExplorerScreen({
   );
 }
 
-function Hero({ p, streak }: { p: Progress; streak: number }) {
+function Hero({ p, streak, creator }: { p: Progress; streak: number; creator: boolean }) {
   const [name, setName] = useState(getExplorerName);
   const [editing, setEditing] = useState(false);
   const tapLevel = useTapCounter("e-level", 10);
@@ -97,6 +97,7 @@ function Hero({ p, streak }: { p: Progress; streak: number }) {
                 <span>
                   Level {p.level} · {p.rank}
                 </span>
+                {creator && <CreatorTag />}
                 {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
               </div>
             {editing ? (

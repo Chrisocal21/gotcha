@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { isSecret, tierLabel, type ClassKey, type MedalState, type Progress, type TaskState } from "../lib/progress";
-import { ClassGlyph, glyphFor, IconCheck, IconFounder, IconHowTo } from "./glyphs";
+import { ClassGlyph, glyphFor, IconCheck, IconCreator, IconFounder, IconHowTo } from "./glyphs";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 export const xpText = (n: number) => `${fmt(n)} XP`;
@@ -41,6 +41,16 @@ export function FounderTag({ className = "" }: { className?: string }) {
     <span className={`founder-tag ${className}`} title="Founders Edition: here from the start">
       <IconFounder size={12} strokeWidth={2.4} fill="currentColor" />
       Founder
+    </span>
+  );
+}
+
+// For the person who made Gotcha. Set only by the server.
+export function CreatorTag({ className = "" }: { className?: string }) {
+  return (
+    <span className={`creator-tag ${className}`} title="Made Gotcha">
+      <IconCreator size={12} strokeWidth={2.4} />
+      Creator
     </span>
   );
 }

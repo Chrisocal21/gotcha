@@ -231,6 +231,7 @@ export function ClassGlyph({ cls, ...props }: LucideProps & { cls: ClassKey }) {
 export {
   Check as IconCheck,
   Star as IconFounder,
+  Sparkles as IconCreator,
   ChevronLeft as IconPrev,
   ChevronRight as IconNext,
   Compass as IconExplorer,

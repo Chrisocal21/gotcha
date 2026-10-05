@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { getBoard, joinBoard, leaveBoard, type Board, type BoardEntry, type BoardScope, type NameKind } from "../lib/api";
 import { CLERK_KEY } from "./AuthGate";
-import { FounderTag, SectionTitle } from "./game";
+import { CreatorTag, FounderTag, SectionTitle } from "./game";
 import { IconTrophy } from "./glyphs";
 import { Button, Panel, Segmented } from "./ui";
 
@@ -68,7 +68,8 @@ export default function Leaderboard() {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-paper-2 p-4">
           <div className="min-w-0">
             <div className="text-[12.5px] font-semibold text-ink-3">You appear as</div>
-            <div className="flex items-center gap-2 font-display text-[19px] font-bold">\n              <span className="truncate">{me.name}</span>\n              {me.founder && <FounderTag />}\n            </div>
+            <div className="flex items-center gap-2 font-display text-[19px] font-bold">\n              <span className="truncate">{me.name}</span>\n              {me.creator && <CreatorTag />}
+              {me.founder && <FounderTag />}\n            </div>
           </div>
           <div className="flex items-center gap-5 text-right">
             <Stat label="Rank" value={me.rank ? `#${fmt(me.rank)}` : "None yet"} />
@@ -85,7 +86,7 @@ export default function Leaderboard() {
             {board.entries.map((e) => (
               <Row key={e.rank} e={e} />
             ))}
-            {!onList && me.rank && <Row e={{ rank: me.rank, name: me.name, kind: me.kind, score: me.score, cards: me.cards, species: me.species, founder: me.founder, you: true }} gap />}
+            {!onList && me.rank && <Row e={{ rank: me.rank, name: me.name, kind: me.kind, score: me.score, cards: me.cards, species: me.species, founder: me.founder, creator: me.creator, you: true }} gap />}
           </ol>
         )}
         <p className="mt-4 text-[12.5px] leading-snug text-ink-3">
@@ -139,6 +140,7 @@ function Row({ e, gap = false }: { e: BoardEntry; gap?: boolean }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[15px] font-bold">
           <span className="truncate">{e.name}</span>
+          {e.creator && <CreatorTag />}
           {e.founder && <FounderTag />}
           {e.you && <span className="text-[12px] font-semibold text-xp-ink">You</span>}
         </div>

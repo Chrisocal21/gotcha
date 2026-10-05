@@ -54,6 +54,7 @@ export interface Status {
   resetsAt: string;
   streak: number;
   caughtToday: boolean;
+  creator?: boolean;
   totalCards: number;
   latest: { artUrl: string; rarity: Tier } | null;
 }
@@ -182,13 +183,14 @@ export interface BoardEntry {
   cards: number;
   species: number;
   founder: boolean;
+  creator: boolean;
   you: boolean;
 }
 
 export interface Board {
   scope: BoardScope;
   entries: BoardEntry[];
-  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number; founder: boolean } | null;
+  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number; founder: boolean; creator: boolean } | null;
   total: number;
 }
 

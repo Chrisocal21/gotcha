@@ -49,6 +49,7 @@ export interface BoardEntry {
   cards: number;
   species: number;
   founder: boolean;
+  creator: boolean;
   you: boolean;
 }
 
@@ -56,7 +57,7 @@ export interface BoardEntry {
 // worked out on each phone and isn't counted, so nobody can inflate the board from their own device.
 const SCORE_SQL = `
   WITH board AS (
-    SELECT p.user_id, p.board_name AS name, p.board_kind AS kind,
+    SELECT p.user_id, p.role AS role, p.board_name AS name, p.board_kind AS kind,
       COUNT(c.id) AS cards,
       EXISTS (SELECT 1 FROM cards f WHERE f.user_id = p.user_id AND f.series = 'founders' AND f.is_sample = 0) AS founder,
       COUNT(DISTINCT lower(trim(c.species))) AS species,
@@ -79,7 +80,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
   const { results } = await db
     .prepare(`${SCORE_SQL} SELECT * FROM board ORDER BY score DESC, cards DESC, name ASC LIMIT ${BOARD_LIMIT}`)
     .bind(species, since)
-    .all<{ user_id: string; name: string; kind: "screen" | "real"; cards: number; species: number; score: number; founder: number }>();
+    .all<{ user_id: string; name: string; kind: "screen" | "real"; cards: number; species: number; score: number; founder: number; role: string | null }>();
 
   const entries: BoardEntry[] = results.map((r, i) => ({
     rank: i + 1,
@@ -89,6 +90,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
     cards: r.cards,
     species: r.species,
     founder: !!r.founder,
+    creator: r.role === "creator",
     you: r.user_id === user,
   }));
 
@@ -102,9 +104,9 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
     .first<{ name: string; kind: "screen" | "real"; cards: number; species: number; score: number; rank: number; total: number; founder: number }>();
 
   const joined = await db
-    .prepare("SELECT board_name, board_kind FROM profiles WHERE user_id = ?")
+    .prepare("SELECT board_name, board_kind, role FROM profiles WHERE user_id = ?")
     .bind(user)
-    .first<{ board_name: string | null; board_kind: "screen" | "real" | null }>();
+    .first<{ board_name: string | null; board_kind: "screen" | "real" | null; role: string | null }>();
 
   return {
     scope,
@@ -118,6 +120,7 @@ export async function loadBoard(db: D1Database, user: string, scope: Scope) {
           cards: mine?.cards ?? 0,
           species: mine?.species ?? 0,
           founder: !!mine?.founder,
+          creator: joined.role === "creator",
         }
       : null,
     total: mine?.total ?? entries.length,
