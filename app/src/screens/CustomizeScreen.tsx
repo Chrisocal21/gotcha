@@ -7,6 +7,7 @@ import {
   CORNERS,
   DEFAULT_STYLE,
   FONTS,
+  FONT_GROUPS,
   PATTERNS,
   fromCode,
   getStyle,
@@ -18,6 +19,7 @@ import {
   type Style,
 } from "../lib/style";
 import { CardBack } from "../components/GameCard";
+import { IconCheck, IconNext, IconPrev } from "../components/glyphs";
 import { getExplorerName } from "../lib/prefs";
 import { Group, SubpageHeader } from "../components/SettingsList";
 import { Button, Segmented } from "../components/ui";
@@ -107,30 +109,8 @@ export default function CustomizeScreen() {
         </ControlRow>
         <div className="custom-row">
           <div className="text-[15.5px] font-semibold">Font</div>
-          <div className="text-[13px] text-ink-3">Tap one and watch the preview change. Each name is shown in its own font.</div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {(Object.keys(FONTS) as FontKey[]).map((key) => (
-              <button
-                key={key}
-                onClick={() => update({ font: key })}
-                aria-pressed={style.font === key}
-                className={`rounded-2xl border px-3.5 py-3 text-left transition ${
-                  style.font === key ? "border-canopy bg-canopy-soft" : "border-line hover:border-line-strong"
-                }`}
-              >
-                <div className="text-[19px] leading-tight font-extrabold break-words" style={{ fontFamily: FONTS[key].display }}>
-                  {FONTS[key].name}
-                </div>
-                <div className="mt-1 truncate text-[13px] text-ink-2" style={{ fontFamily: FONTS[key].sans }}>
-                  The quick brown fox
-                </div>
-                <div className="mt-1.5 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
-                  {FONTS[key].scope === "all" ? "Whole app" : "Headings"}
-                </div>
-              </button>
-            ))}          </div>
-        </div>
-      </Group>
+          <FontPicker value={style.font} onChange={(font) => update({ font })} />
+        </div>      </Group>
 
       <Group title="Share your style" footer={note ? <span className="text-canopy">{note}</span> : "Send a friend your code, or paste theirs to try their look."}>
         <div className="custom-row flex flex-col gap-2.5 sm:flex-row">
@@ -196,6 +176,76 @@ export default function CustomizeScreen() {
   );
 }
 
+// A compact picker: arrows flip through every font one by one, or open the list to jump straight to one.
+function FontPicker({ value, onChange }: { value: FontKey; onChange: (f: FontKey) => void }) {
+  const [open, setOpen] = useState(false);
+  const keys = Object.keys(FONTS) as FontKey[];
+  const index = keys.indexOf(value);
+  const go = (step: number) => onChange(keys[(index + step + keys.length) % keys.length]);
+  const def = FONTS[value];
+  return (
+    <div className="relative mt-2.5">
+      <div className="flex items-stretch gap-2">
+        <button onClick={() => go(-1)} aria-label="Previous font" className="grid size-12 shrink-0 place-items-center rounded-2xl border border-line-strong bg-paper-2 hover:bg-paper-3">
+          <IconPrev size={20} />
+        </button>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-2xl border border-line-strong bg-paper-2 px-4 text-left hover:bg-paper-3"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-[19px] leading-tight font-extrabold" style={{ fontFamily: def.display }}>
+              {def.name}
+            </span>
+            <span className="block text-[11.5px] text-ink-3">
+              {index + 1} of {keys.length} · {def.scope === "all" ? "Whole app" : "Headings"}
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition ${open ? "rotate-180" : ""}`} aria-hidden>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <button onClick={() => go(1)} aria-label="Next font" className="grid size-12 shrink-0 place-items-center rounded-2xl border border-line-strong bg-paper-2 hover:bg-paper-3">
+          <IconNext size={20} />
+        </button>
+      </div>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <ul role="listbox" className="absolute inset-x-0 top-full z-40 mt-2 max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain rounded-2xl border border-line-strong bg-paper p-1.5 shadow-lift">
+            {FONT_GROUPS.map((g) => (
+              <li key={g}>
+                <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">{g}</div>
+                <ul>
+                  {keys
+                    .filter((k) => FONTS[k].group === g)
+                    .map((k) => (
+                      <li key={k} role="option" aria-selected={k === value}>
+                        <button
+                          onClick={() => {
+                            onChange(k);
+                            setOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left hover:bg-paper-3 ${k === value ? "bg-canopy-soft" : ""}`}
+                        >
+                          <span className="truncate text-[18px] leading-tight font-bold" style={{ fontFamily: FONTS[k].display }}>
+                            {FONTS[k].name}
+                          </span>
+                          {k === value && <IconCheck size={16} className="shrink-0 text-canopy" />}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
 // A small sample of the app that restyles with every change: your name, the fonts, the buttons, the corners and the card back.
 function Preview({ font }: { font: FontKey }) {
   const name = getExplorerName() || "Explorer";

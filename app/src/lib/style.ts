@@ -19,7 +19,17 @@ export type FontKey =
   | "caveat"
   | "pacifico"
   | "techy"
-  | "jetbrains";
+  | "jetbrains"
+  | "comic"
+  | "baloo"
+  | "comfortaa"
+  | "patrick"
+  | "chewy"
+  | "bangers"
+  | "righteous"
+  | "marker"
+  | "lobster"
+  | "pixel";
 
 export interface Style {
   accent: string;
@@ -84,23 +94,40 @@ const SERIF = "Georgia, serif";
 const MONO = "ui-monospace, Menlo, monospace";
 
 // "all" restyles every word in the app; "headings" only the big titles and numbers.
-export const FONTS: Record<FontKey, { name: string; display: string; sans: string; scope: "all" | "headings" }> = {
-  default: { name: "Bricolage Grotesque", display: BRICOLAGE, sans: FIGTREE, scope: "headings" },
-  clean: { name: "Figtree", display: FIGTREE, sans: FIGTREE, scope: "all" },
-  inter: { name: "Inter", display: stack("Inter Variable", SANS), sans: stack("Inter Variable", SANS), scope: "all" },
-  poppins: { name: "Poppins", display: stack("Poppins", SANS), sans: stack("Poppins", SANS), scope: "all" },
-  nunito: { name: "Nunito", display: stack("Nunito Variable", SANS), sans: stack("Nunito Variable", SANS), scope: "all" },
-  quicksand: { name: "Quicksand", display: stack("Quicksand Variable", SANS), sans: stack("Quicksand Variable", SANS), scope: "all" },
-  space: { name: "Space Grotesk", display: stack("Space Grotesk Variable", SANS), sans: stack("Space Grotesk Variable", SANS), scope: "all" },
-  playful: { name: "Fredoka", display: stack("Fredoka Variable", SANS), sans: stack("Fredoka Variable", SANS), scope: "all" },
-  editorial: { name: "Playfair Display", display: stack("Playfair Display Variable", SERIF), sans: FIGTREE, scope: "headings" },
-  lora: { name: "Lora", display: stack("Lora Variable", SERIF), sans: FIGTREE, scope: "headings" },
-  merriweather: { name: "Merriweather", display: stack("Merriweather Variable", SERIF), sans: FIGTREE, scope: "headings" },
-  oswald: { name: "Oswald", display: stack("Oswald Variable", SANS), sans: FIGTREE, scope: "headings" },
-  caveat: { name: "Caveat", display: stack("Caveat Variable", "cursive"), sans: FIGTREE, scope: "headings" },
-  pacifico: { name: "Pacifico", display: stack("Pacifico", "cursive"), sans: FIGTREE, scope: "headings" },
-  techy: { name: "DM Mono", display: '"DM Mono", ui-monospace, Menlo, monospace', sans: FIGTREE, scope: "headings" },
-  jetbrains: { name: "JetBrains Mono", display: stack("JetBrains Mono Variable", MONO), sans: stack("JetBrains Mono Variable", MONO), scope: "all" },
+export type FontGroup = "Clean" | "Serif" | "Fun" | "Mono";
+export const FONT_GROUPS: FontGroup[] = ["Clean", "Fun", "Serif", "Mono"];
+
+type FontDef = { name: string; display: string; sans: string; scope: "all" | "headings"; group: FontGroup };
+const font = (name: string, group: FontGroup, scope: "all" | "headings", display: string, sans = display): FontDef => ({ name, group, scope, display, sans });
+const COMIC = '"Comic Sans MS", "Comic Sans", "Comic Neue", cursive';
+
+export const FONTS: Record<FontKey, FontDef> = {
+  default: font("Bricolage Grotesque", "Clean", "headings", BRICOLAGE, FIGTREE),
+  clean: font("Figtree", "Clean", "all", FIGTREE),
+  inter: font("Inter", "Clean", "all", stack("Inter Variable", SANS)),
+  poppins: font("Poppins", "Clean", "all", stack("Poppins", SANS)),
+  nunito: font("Nunito", "Clean", "all", stack("Nunito Variable", SANS)),
+  quicksand: font("Quicksand", "Clean", "all", stack("Quicksand Variable", SANS)),
+  space: font("Space Grotesk", "Clean", "all", stack("Space Grotesk Variable", SANS)),
+  oswald: font("Oswald", "Clean", "headings", stack("Oswald Variable", SANS), FIGTREE),
+  comic: font("Comic Sans", "Fun", "all", COMIC),
+  playful: font("Fredoka", "Fun", "all", stack("Fredoka Variable", SANS)),
+  baloo: font("Baloo 2", "Fun", "all", stack("Baloo 2 Variable", SANS)),
+  comfortaa: font("Comfortaa", "Fun", "all", stack("Comfortaa Variable", SANS)),
+  patrick: font("Patrick Hand", "Fun", "all", stack("Patrick Hand", "cursive")),
+  chewy: font("Chewy", "Fun", "headings", stack("Chewy", "cursive"), FIGTREE),
+  bangers: font("Bangers", "Fun", "headings", stack("Bangers", "cursive"), FIGTREE),
+  righteous: font("Righteous", "Fun", "headings", stack("Righteous", "cursive"), FIGTREE),
+  caveat: font("Caveat", "Fun", "headings", stack("Caveat Variable", "cursive"), FIGTREE),
+  marker: font("Permanent Marker", "Fun", "headings", stack("Permanent Marker", "cursive"), FIGTREE),
+  lobster: font("Lobster", "Fun", "headings", stack("Lobster", "cursive"), FIGTREE),
+  pacifico: font("Pacifico", "Fun", "headings", stack("Pacifico", "cursive"), FIGTREE),
+  pixel: font("Press Start 2P", "Fun", "headings", stack("Press Start 2P", "monospace"), FIGTREE),
+  editorial: font("Playfair Display", "Serif", "headings", stack("Playfair Display Variable", SERIF), FIGTREE),
+  lora: font("Lora", "Serif", "headings", stack("Lora Variable", SERIF), FIGTREE),
+  merriweather: font("Merriweather", "Serif", "headings", stack("Merriweather Variable", SERIF), FIGTREE),
+  techy: font("DM Mono", "Mono", "headings", '"DM Mono", ui-monospace, Menlo, monospace', FIGTREE),
+  jetbrains: font("JetBrains Mono", "Mono", "all", stack("JetBrains Mono Variable", MONO)),
 };
 export const PATTERNS: { value: Pattern; label: string }[] = [
   { value: "none", label: "None" },
