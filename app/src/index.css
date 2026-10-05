@@ -803,6 +803,30 @@ button:disabled {
 }
 :root[data-motion="reduced"] .metal-6 .medal__pin {
   animation: none;
+}/* The next tier's metal rises from the bottom of the rim as progress grows. */
+.medal__grow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(from 210deg, var(--m1), var(--m2), var(--m3), var(--m1), var(--m2), var(--m3), var(--m1));
+  clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0);
+  transition: clip-path 0.8s var(--ease-smooth, ease);
+}
+.medal__grow > i {
+  display: none;
+}
+.medal__grow.metal-4 {
+  background: conic-gradient(from 210deg, #8fd3ff, #fff, #d6b8ff, #ffd2ef, #fff, #a8f0dd, #8fd3ff);
+}
+.medal__grow.metal-5 {
+  background: conic-gradient(from 210deg, #4fc3f7, #fff, #b3f0ff, #81d4fa, #fff, #e0f7ff, #4fc3f7);
+}
+.medal__grow.metal-6 {
+  background: conic-gradient(from 210deg, #ff5f6d, #ffe08a, #7b2ff7, #00d4ff, #ffe08a, #ff5f6d, #7b2ff7);
+}
+.medal__enamel {
+  position: relative;
 }.medal__enamel {
   display: grid;
   place-items: center;

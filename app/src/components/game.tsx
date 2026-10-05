@@ -52,6 +52,11 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
   return (
     <div className={`medal metal-${m.tier}`} style={{ "--enamel": m.def.color } as CSSProperties}>
       <div className="medal__pin" style={{ width: size, height: size }}>
+        {m.goal != null && !isSecret(m) && (
+          <span className={`medal__grow metal-${Math.min(m.tier + 1, 6)}`} style={{ "--p": ratio } as CSSProperties}>
+            <i />
+          </span>
+        )}
         <div className="medal__enamel">
           <G size={Math.round(size * 0.4)} strokeWidth={2.1} />
         </div>
@@ -63,14 +68,9 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
           {hidden ? null : isSecret(m) ? (
             <div className="medal__count">{m.def.blurb}</div>
           ) : m.goal != null ? (
-            <>
-              <span className={`medal__bar metal-${Math.min(m.tier + 1, 6)}`} style={{ "--p": ratio } as CSSProperties}>
-                <i />
-              </span>
-              <div className="medal__count tabular">
-                {fmt(m.value)} / {fmt(m.goal)} {m.def.unit}
-              </div>
-            </>
+            <div className="medal__count tabular">
+              {fmt(m.value)} / {fmt(m.goal)} {m.def.unit}
+            </div>
           ) : (
             <div className="medal__count">All tiers done</div>
           )}
