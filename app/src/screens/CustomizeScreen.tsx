@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ACCENTS,
   ACTIONS,
@@ -10,6 +10,7 @@ import {
   FONT_GROUPS,
   PATTERNS,
   fromCode,
+  tripleOf,
   getStyle,
   saveStyle,
   toCode,
@@ -18,7 +19,9 @@ import {
   type Pattern,
   type Style,
 } from "../lib/style";
+import ColorChoice from "../components/ColorChoice";
 import { CardBack } from "../components/GameCard";
+import { SKINS, SKIN_GROUPS } from "../lib/skins";
 import { IconCheck, IconNext, IconPrev } from "../components/glyphs";
 import { getExplorerName } from "../lib/prefs";
 import { Group, SubpageHeader } from "../components/SettingsList";
@@ -39,7 +42,6 @@ export default function CustomizeScreen() {
     setNote(null);
   }
 
-  const isCustomAccent = !ACCENTS.some((a) => a.value === style.accent);
 
   return (
     <div className="page max-w-[1040px]">
@@ -54,48 +56,57 @@ export default function CustomizeScreen() {
         <div className="min-w-0 lg:order-1">
           <p className="settings-footer !mt-0 !mb-3">Everything updates live and stays on this device. Cards never change, so they look the same to everyone.</p>
       <Group title="Colors">
-        <SwatchRow title="Main color" detail="Buttons, links and highlights">
-          {ACCENTS.map((a) => (
-            <Swatch key={a.value} label={a.name} selected={style.accent === a.value} fill={a.value} onClick={() => update({ accent: a.value })} />
-          ))}
-          <label
-            title="Pick any color"
-            className={`relative grid size-10 cursor-pointer place-items-center rounded-full border border-line-strong text-[15px] font-bold text-ink-2 ${
-              isCustomAccent ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""
-            }`}
-            style={isCustomAccent ? { background: style.accent, color: "var(--on-accent)" } : undefined}
-          >
-            {isCustomAccent ? "" : "+"}
-            <input
-              type="color"
-              aria-label="Custom main color"
-              value={style.accent}
-              onChange={(e) => update({ accent: e.target.value })}
-              className="absolute inset-0 cursor-pointer opacity-0"
-            />
-          </label>
-        </SwatchRow>
-        <SwatchRow title="Catch button" detail="The big button on the camera">
-          {Object.entries(ACTIONS).map(([key, a]) => (
-            <Swatch key={key} label={a.name} selected={style.action === key} fill={gradient(a.colors)} onClick={() => update({ action: key })} />
-          ))}
-        </SwatchRow>
-        <SwatchRow title="Background" detail="The glow behind everything">
-          {Object.entries(BACKGROUNDS).map(([key, b]) => (
-            <Swatch key={key} label={b.name} selected={style.bg === key} fill={gradient(b.colors)} onClick={() => update({ bg: key })} />
-          ))}
-        </SwatchRow>
-        <ControlRow title="Pattern">
-          <Segmented size="sm" value={style.pattern} options={PATTERNS} onChange={(pattern: Pattern) => update({ pattern })} />
-        </ControlRow>
+        <ColorChoice
+          id="accent"
+          title="Main color"
+          detail="Buttons, links, your level and highlights"
+          presets={ACCENTS.map((c) => ({ key: c.value, name: c.name, fill: c.value }))}
+          value={style.accent}
+          onChange={(accent) => update({ accent })}
+          fillOf={(v) => v}
+        />
+        <ColorChoice
+          id="action"
+          title="Catch button"
+          detail="The big button on the camera"
+          presets={Object.entries(ACTIONS).map(([key, c]) => ({ key, name: c.name, fill: gradient(c.colors) }))}
+          value={style.action}
+          onChange={(action) => update({ action })}
+          fillOf={(v) => gradient(tripleOf("action", v))}
+          maxColors={3}
+        />
+        <ColorChoice
+          id="back"
+          title="Card back"
+          detail="Seen when a card is revealed"
+          presets={Object.entries(BACKS).map(([key, c]) => ({ key, name: c.name, fill: gradient(c.colors) }))}
+          value={style.back}
+          onChange={(back) => update({ back })}
+          fillOf={(v) => gradient(tripleOf("back", v))}
+          maxColors={3}
+        />
       </Group>
 
-      <Group title="Card back">
-        <SwatchRow title="Color" detail="Seen when a card is revealed">
-          {Object.entries(BACKS).map(([key, b]) => (
-            <Swatch key={key} label={b.name} selected={style.back === key} fill={gradient(b.colors)} onClick={() => update({ back: key })} />
-          ))}
-        </SwatchRow>
+      <Group title="Background">
+        <div className="custom-row">
+          <div className="text-[15.5px] font-semibold">Design</div>
+          <div className="text-[13px] text-ink-3">A whole look for the page behind everything</div>
+          <SkinPicker value={style.skin} glow={gradient(tripleOf("bg", style.bg))} onChange={(skin) => update({ skin })} />
+        </div>
+        <ColorChoice
+          id="bg"
+          title="Glow"
+          detail={style.skin === "none" ? "The soft color behind the page" : "Used when the design is None"}
+          presets={Object.entries(BACKGROUNDS).map(([key, c]) => ({ key, name: c.name, fill: gradient(c.colors) }))}
+          value={style.bg}
+          onChange={(bg) => update({ bg })}
+          fillOf={(v) => gradient(tripleOf("bg", v))}
+          maxColors={3}
+          dim={style.skin !== "none"}
+        />
+        <ControlRow title="Texture">
+          <Segmented size="sm" value={style.pattern} options={PATTERNS} onChange={(pattern: Pattern) => update({ pattern })} />
+        </ControlRow>
       </Group>
 
       <Group title="Shape and type">
@@ -278,16 +289,6 @@ function Preview() {
     </div>
   );
 }
-function SwatchRow({ title, detail, children }: { title: string; detail?: string; children: ReactNode }) {
-  return (
-    <div className="custom-row">
-      <div className="text-[15.5px] font-semibold">{title}</div>
-      {detail && <div className="text-[13px] text-ink-3">{detail}</div>}
-      <div className="mt-3 flex flex-wrap gap-3">{children}</div>
-    </div>
-  );
-}
-
 function ControlRow({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="custom-row flex items-center justify-between gap-4">
@@ -297,15 +298,98 @@ function ControlRow({ title, children }: { title: string; children: ReactNode })
   );
 }
 
-function Swatch({ label, selected, fill, onClick }: { label: string; selected: boolean; fill: string; onClick: () => void }) {
+// A shrunken picture of a background design: the real background drawn at 400 by 300 and scaled to fit,
+// so big shapes (a sun, hills) keep their proportions.
+function SkinThumb({ look, className = "" }: { look: React.CSSProperties; className?: string }) {
+  const box = useRef<HTMLSpanElement>(null);
+  const [scale, setScale] = useState(0.15);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const update = () => setScale(el.clientWidth / 400);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      aria-pressed={selected}
-      title={label}
-      className={`size-10 rounded-full border border-black/10 transition active:scale-95 ${selected ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : "hover:scale-105"}`}
-      style={{ background: fill }}
-    />
+    <span ref={box} className={`relative block shrink-0 overflow-hidden rounded-lg border border-black/10 ${className}`}>
+      <span className="absolute top-0 left-0 block origin-top-left" style={{ width: 400, height: 300, transform: `scale(${scale})`, ...look }} />
+    </span>
+  );
+}
+
+const lookOf = (key: string, glow: string): React.CSSProperties => (key === "none" ? { background: glow } : { background: SKINS[key].bg, backgroundSize: SKINS[key].size });
+
+// Like the font picker: arrows step through every design, or open the list to jump to one.
+function SkinPicker({ value, glow, onChange }: { value: string; glow: string; onChange: (k: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const listed = new Set(SKIN_GROUPS.flatMap((g) => g.keys));
+  const groups = [...SKIN_GROUPS, { name: "More", keys: Object.keys(SKINS).filter((k) => !listed.has(k)) }].map((g) => ({ ...g, keys: g.keys.filter((k) => k in SKINS) })).filter((g) => g.keys.length);
+  const keys = ["none", ...groups.flatMap((g) => g.keys)];
+  const index = Math.max(0, keys.indexOf(value));
+  const go = (step: number) => onChange(keys[(index + step + keys.length) % keys.length]);
+  const name = value === "none" ? "None" : SKINS[value]?.name;
+  const era = value === "none" ? "Soft glow" : SKINS[value]?.era;
+  return (
+    <div className="relative mt-2.5">
+      <div className="flex items-stretch gap-2">
+        <button onClick={() => go(-1)} aria-label="Previous design" className="grid size-14 shrink-0 place-items-center rounded-2xl border border-line-strong bg-paper-2 hover:bg-paper-3">
+          <IconPrev size={20} />
+        </button>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-line-strong bg-paper-2 py-1.5 pr-3 pl-1.5 text-left hover:bg-paper-3"
+        >
+          <SkinThumb look={lookOf(value, glow)} className="h-11 w-[58px]" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[16px] leading-tight font-bold">{name}</span>
+            <span className="block truncate text-[11.5px] text-ink-3">
+              {era} · {index + 1} of {keys.length}
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition ${open ? "rotate-180" : ""}`} aria-hidden>
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <button onClick={() => go(1)} aria-label="Next design" className="grid size-14 shrink-0 place-items-center rounded-2xl border border-line-strong bg-paper-2 hover:bg-paper-3">
+          <IconNext size={20} />
+        </button>
+      </div>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <ul role="listbox" className="relative z-40 mt-2 max-h-[min(55vh,420px)] overflow-y-auto overscroll-contain rounded-2xl border border-line-strong bg-paper-2 p-1.5">
+            {[{ name: "", keys: ["none"] }, ...groups].map((g) => (
+              <li key={g.name || "none"}>
+                {g.name && <div className="px-3 pt-2.5 pb-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">{g.name}</div>}
+                <ul>
+                  {g.keys.map((k) => (
+                    <li key={k} role="option" aria-selected={k === value}>
+                      <button
+                        onClick={() => {
+                          onChange(k);
+                          setOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-paper-3 ${k === value ? "bg-canopy-soft" : ""}`}
+                      >
+                        <SkinThumb look={lookOf(k, glow)} className="h-10 w-[54px]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] leading-tight font-bold">{k === "none" ? "None" : SKINS[k].name}</span>
+                          <span className="block truncate text-[11.5px] text-ink-3">{k === "none" ? "Soft glow" : SKINS[k].era}</span>
+                        </span>
+                        {k === value && <IconCheck size={16} className="shrink-0 text-canopy" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }

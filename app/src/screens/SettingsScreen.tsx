@@ -17,6 +17,7 @@ import {
   setTheme,
   type Theme,
 } from "../lib/prefs";
+import { install, useInstallState } from "../lib/pwa";
 import { isSoundOn, setSoundOn } from "../lib/sfx";
 import { useTapCounter } from "../lib/eggs";
 import { MEDALS, XP, type Progress } from "../lib/progress";
@@ -31,6 +32,7 @@ import {
   IconPhoto,
   IconPrivacy,
   IconRarity,
+  IconInstall,
   IconReplay,
   IconReport,
   IconSound,
@@ -64,6 +66,7 @@ const TONE = {
   trophy: "#d99a12",
   replay: "#2f8fe0",
   report: "#f76b15",
+  install: "#0f6e53",
   privacy: "#64748b",
   developer: "#475569",
 };
@@ -128,6 +131,7 @@ function SettingsHome({
   const [autoSave, setAutoSaveState] = useState(getAutoSave);
   const [gyro, setGyroState] = useState(getGyro);
   const [copied, setCopied] = useState(false);
+  const installState = useInstallState();
 
   async function copyDiagnostics() {
     const lines = [
@@ -252,6 +256,18 @@ function SettingsHome({
         <Row icon={IconHowTo} tone={TONE.howto} title="How to play" href="#/settings/how" />
         <Row icon={IconRarity} tone={TONE.rarity} title="Rarity and odds" href="#/settings/odds" />
         <Row icon={IconTrophy} tone={TONE.trophy} title="Levels and badges" href="#/settings/levels" />
+      </Group>
+
+      <Group title="App">
+        {installState === "installed" ? (
+          <Row icon={IconInstall} tone={TONE.install} title="Gotcha is installed" detail="Opening from your home screen or desktop" />
+        ) : installState === "available" ? (
+          <Row icon={IconInstall} tone={TONE.install} title="Install Gotcha" detail="Add it to your home screen or desktop, like any app" onClick={install} />
+        ) : installState === "ios" ? (
+          <Row icon={IconInstall} tone={TONE.install} title="Add Gotcha to your home screen" detail="In Safari, tap Share, then Add to Home Screen" />
+        ) : (
+          <Row icon={IconInstall} tone={TONE.install} title="Install Gotcha" detail="Use your browser's menu and choose Install app or Add to Home Screen" />
+        )}
       </Group>
 
       <Group title="Help">

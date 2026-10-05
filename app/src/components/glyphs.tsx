@@ -237,6 +237,7 @@ export {
   Compass as IconExplorer,
   Flame as IconStreak,
   Layers as IconCollection,
+  Plus as IconPlus,
   Settings as IconSettings,
   X as IconClose,
 } from "lucide-react";
@@ -252,6 +253,7 @@ export {
   MessageSquareWarning as IconReport,
   Palette as IconCustomize,
   Rotate3d as IconTilt,
+  Smartphone as IconInstall,
   ShieldCheck as IconPrivacy,
   SunMoon as IconTheme,
   Trophy as IconTrophy,

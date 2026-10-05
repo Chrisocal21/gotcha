@@ -34,8 +34,10 @@ import "./index.css";
 import App from "./App";
 import AuthGate from "./components/AuthGate";
 import { initPrefs } from "./lib/prefs";
+import { initPwa } from "./lib/pwa";
 
 initPrefs();
+initPwa();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

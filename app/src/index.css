@@ -106,7 +106,8 @@
   Dark theme. Applied when the person picks Dark, or picks System and their device is dark.
   Cards are physical objects and keep their light faces in both themes (see .card-box below).
 */
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+:root[data-skin-dark] {
   --color-sand: #0d1310;
   --color-paper: #171e1a;
   --color-paper-2: #1d2621;
@@ -179,7 +180,8 @@
 }
 
 /* The tier-colored score is dark-on-light in light mode and glowing-on-dark in dark mode. */
-:root[data-theme="dark"] .tier-ink {
+:root[data-theme="dark"] .tier-ink,
+:root[data-skin-dark] .tier-ink {
   color: var(--tier-glow);
 }
 @media (prefers-color-scheme: dark) {
@@ -208,13 +210,15 @@ body {
   min-height: 100dvh;
   color: var(--color-ink);
   font-family: var(--font-sans);
-  background:
+  background: var(
+    --skin-bg,
     var(--pattern, none),
     radial-gradient(1000px 620px at -8% -12%, var(--glow-1), transparent 62%),
     radial-gradient(900px 560px at 108% -8%, var(--glow-2), transparent 62%),
     radial-gradient(1100px 720px at 50% 118%, var(--glow-3), transparent 62%),
-    var(--color-sand);
-  background-size: var(--pattern-size, auto), auto, auto, auto, auto;
+    var(--color-sand)
+  );
+  background-size: var(--skin-size, var(--pattern-size, auto), auto, auto, auto, auto);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

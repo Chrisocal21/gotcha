@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#e4ddcc" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Gotcha" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="description" content="Photograph real animals and collect them as one-of-a-kind illustrated cards." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Gotcha</title>
     <script>
@@ -18,6 +24,7 @@
         if (s) {
           for (var k in s.vars) document.documentElement.style.setProperty(k, s.vars[k]);
           if (s.pattern && s.pattern !== "none") document.documentElement.setAttribute("data-pattern", s.pattern);
+          if (s.dark) document.documentElement.setAttribute("data-skin-dark", "1");
         }
       } catch (e) {}
     </script>
