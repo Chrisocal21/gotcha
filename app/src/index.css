@@ -3066,12 +3066,12 @@ button:disabled {
   height: 20px;
   padding: 0 8px 0 6px;
   border-radius: 999px;
-  background: linear-gradient(100deg, #ff7a1a, #ff3d8b 40%, #7b2ff7 75%, #00b8e6);
+  background: linear-gradient(180deg, #1f9a76, #0f6e53 55%, #0a4f3b);
   color: #fff;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  text-shadow: 0 1px 0 rgb(0 0 0 / 0.25);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 1px 4px rgb(123 47 247 / 0.45);
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.3);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 0 0 1px #0a4f3b, 0 1px 4px rgb(10 79 59 / 0.5);
 }

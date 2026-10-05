@@ -98,7 +98,7 @@ function Hero({ p, streak, creator }: { p: Progress; streak: number; creator: bo
                   Level {p.level} · {p.rank}
                 </span>
                 {creator && <CreatorTag />}
-                {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
+                {!creator && (p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
               </div>
             {editing ? (
               <input
