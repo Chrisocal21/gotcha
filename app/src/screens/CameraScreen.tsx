@@ -6,11 +6,11 @@ import { useNow } from "../lib/hooks";
 import { askMotionPermission } from "../lib/motion";
 import { XP, type Progress } from "../lib/progress";
 import { haptic, sfx } from "../lib/sfx";
+import { MobileTopBar, TabBar } from "../components/AppShell";
 import DevUpload from "../components/DevUpload";
 import { CardFront } from "../components/GameCard";
 import { LevelBadge, SectionTitle, TaskRow } from "../components/game";
-import { IconSettings, IconStreak } from "../components/glyphs";
-import Logo from "../components/Logo";
+import { IconStreak } from "../components/glyphs";
 import { Meter, Panel } from "../components/ui";
 import { useCamera, Viewfinder } from "../components/Viewfinder";
 
@@ -63,29 +63,31 @@ export default function CameraScreen({
     }
   }
 
+  function catchNow() {
+    askMotionPermission();
+    const video = camera.videoRef.current;
+    if (video) shoot(() => captureShot(video));
+  }
+
   return (
     <div className="camera-page">
       <section className="camera-stage">
         <Viewfinder camera={camera} flash={flash} onTestFrame={status && !capped && !busy ? () => shoot(testFrame) : undefined}>
-          {/* Phones: the camera fills the screen, so it carries its own top bar. */}
-          <div className="camera-hud lg:hidden">
-            <a href="#/" aria-label="Gotcha home" className="mr-auto text-white">
-              <Logo className="text-[25px]" />
-            </a>
+          {/* Phones: the same floating header and tab bar as every other page. The orb is the shutter. */}
+          <div className="lg:hidden">
+            <MobileTopBar progress={progress} hidden={false} />
+            <TabBar screen="camera" hidden={false} onCatch={catchNow} catchDisabled={!canCatch} />
+          </div>
+
+          <div className="camera-controls">
             {status && (
-              <span className="hud-pill hud-pill--glass !h-9">
-                <span className="text-[13.5px] font-bold tabular">
+              <span className="hud-pill hud-pill--glass mx-auto !h-8 lg:hidden">
+                <span className="text-[13px] font-bold tabular">
                   {status.left}
                   <span className="font-medium text-white/70"> left</span>
                 </span>
               </span>
             )}
-            <a href="#/settings" aria-label="Settings" className="glass-btn">
-              <IconSettings size={19} />
-            </a>
-          </div>
-
-          <div className="camera-controls">
             <p className="min-h-5 text-center text-[13.5px] font-semibold text-white/90 [text-shadow:0_1px_8px_rgb(0_0_0/0.5)]">
               {camera.state === "ready" ? hintFor(status, progress, now) : ""}
             </p>

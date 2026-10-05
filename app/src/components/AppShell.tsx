@@ -80,19 +80,39 @@ export function MobileTopBar({ progress, hidden }: { progress: Progress | null; 
   );
 }
 
-export function TabBar({ screen, hidden }: { screen: Screen; hidden: boolean }) {
+// On the camera, the center orb is the shutter itself (onCatch), so every page shares the same bar.
+export function TabBar({
+  screen,
+  hidden,
+  onCatch,
+  catchDisabled = false,
+}: {
+  screen: Screen;
+  hidden: boolean;
+  onCatch?: () => void;
+  catchDisabled?: boolean;
+}) {
+  const orb = (
+    <span className="shutter shutter--tab" aria-hidden>
+      <span className="shutter__ring" />
+      <span className="shutter__core" />
+    </span>
+  );
   return (
     <nav className={`tabbar ${hidden ? "is-hidden" : ""}`} aria-label="Main">
       <a href="#/collection" className="tab-link" aria-current={screen === "collection" ? "page" : undefined}>
         <IconCollection size={22} />
         Collection
       </a>
-      <a href="#/" className="tab-catch" aria-label="Catch">
-        <span className="shutter shutter--tab" aria-hidden>
-          <span className="shutter__ring" />
-          <span className="shutter__core" />
-        </span>
-      </a>
+      {onCatch ? (
+        <button className="tab-catch" aria-label="Catch" disabled={catchDisabled} onClick={onCatch}>
+          {orb}
+        </button>
+      ) : (
+        <a href="#/" className="tab-catch" aria-label="Catch">
+          {orb}
+        </a>
+      )}
       <a href="#/explorer" className="tab-link" aria-current={screen === "explorer" ? "page" : undefined}>
         <IconExplorer size={22} />
         Explorer
