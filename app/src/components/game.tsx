@@ -43,6 +43,37 @@ export function XpBar({ ratio, className = "", tone = "light" }: { ratio: number
   );
 }
 
+const SEGMENTS = 12;
+const GAP = 5; // degrees between pieces
+const TIER_COLOR = ["#8b948e", "#c8814a", "#b8c2cd", "#e3ac1f", "#8fb4ec", "#4fc3f7", "#c040ff"];
+
+function arc(i: number, r: number) {
+  const span = 360 / SEGMENTS;
+  const a0 = ((i * span + GAP / 2 - 90) * Math.PI) / 180;
+  const a1 = (((i + 1) * span - GAP / 2 - 90) * Math.PI) / 180;
+  const p = (a: number) => `${(50 + r * Math.cos(a)).toFixed(2)} ${(50 + r * Math.sin(a)).toFixed(2)}`;
+  return `M ${p(a0)} A ${r} ${r} 0 0 1 ${p(a1)}`;
+}
+
+// Starts empty. Each piece of the ring fills as progress grows toward the next tier; a full ring is a finished tier.
+function Ring({ m, ratio }: { m: MedalState; ratio: number }) {
+  const done = m.goal == null || isSecret(m);
+  const filled = done ? (m.tier > 0 ? SEGMENTS : 0) : ratio > 0 ? Math.max(1, Math.floor(ratio * SEGMENTS)) : 0;
+  const color = TIER_COLOR[done ? m.tier : Math.min(m.tier + 1, 6)];
+  return (
+    <svg className="medal__ring" viewBox="0 0 100 100" aria-hidden>
+      {Array.from({ length: SEGMENTS }, (_, i) => (
+        <path
+          key={i}
+          d={arc(i, 46.5)}
+          strokeWidth={7}
+          stroke={i < filled ? color : "var(--color-line-strong)"}
+          opacity={i < filled ? 1 : 0.55}
+        />
+      ))}
+    </svg>
+  );
+}
 // A badge, drawn as an enamel pin. Its metal shows the tier reached.
 export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState; size?: number; showProgress?: boolean }) {
   const hidden = isSecret(m) && m.tier === 0;
@@ -52,11 +83,7 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
   return (
     <div className={`medal metal-${m.tier}`} style={{ "--enamel": m.def.color } as CSSProperties}>
       <div className="medal__pin" style={{ width: size, height: size }}>
-        {m.goal != null && !isSecret(m) && (
-          <span className={`medal__grow metal-${Math.min(m.tier + 1, 6)}`} style={{ "--p": ratio } as CSSProperties}>
-            <i />
-          </span>
-        )}
+        <Ring m={m} ratio={ratio} />
         <div className="medal__enamel">
           <G size={Math.round(size * 0.4)} strokeWidth={2.1} />
         </div>

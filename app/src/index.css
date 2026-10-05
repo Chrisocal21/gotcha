@@ -771,59 +771,25 @@ button:disabled {
   --m1: #c2185b;
   --m2: #ffe08a;
   --m3: #7b2ff7;
-}.medal__pin {
+}
+.medal__pin {
   position: relative;
   flex: none;
   padding: 7%;
   border-radius: 50%;
-  background: conic-gradient(from 210deg, var(--m1), var(--m2), var(--m3), var(--m1), var(--m2), var(--m3), var(--m1));
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.6) inset,
-    0 6px 14px -6px rgb(23 33 28 / 0.45);
 }
-.metal-4 .medal__pin {
-  background: conic-gradient(from 210deg, #8fd3ff, #fff, #d6b8ff, #ffd2ef, #fff, #a8f0dd, #8fd3ff);
-}
-.metal-5 .medal__pin {
-  background: conic-gradient(from 210deg, #4fc3f7, #fff, #b3f0ff, #81d4fa, #fff, #e0f7ff, #4fc3f7);
-}
-.metal-6 .medal__pin {
-  background: conic-gradient(from 210deg, #ff5f6d, #ffe08a, #7b2ff7, #00d4ff, #ffe08a, #ff5f6d, #7b2ff7);
-  animation: mythic-spin 6s linear infinite;
-}
-@keyframes mythic-spin {
-  to {
-    filter: hue-rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .metal-6 .medal__pin {
-    animation: none;
-  }
-}
-:root[data-motion="reduced"] .metal-6 .medal__pin {
-  animation: none;
-}/* The next tier's metal rises from the bottom of the rim as progress grows. */
-.medal__grow {
+/* The rim is a ring of pieces. Pieces light up one by one in the next tier's color. */
+.medal__ring {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  pointer-events: none;
-  background: conic-gradient(from 210deg, var(--m1), var(--m2), var(--m3), var(--m1), var(--m2), var(--m3), var(--m1));
-  clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0);
-  transition: clip-path 0.8s var(--ease-smooth, ease);
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-.medal__grow > i {
-  display: none;
-}
-.medal__grow.metal-4 {
-  background: conic-gradient(from 210deg, #8fd3ff, #fff, #d6b8ff, #ffd2ef, #fff, #a8f0dd, #8fd3ff);
-}
-.medal__grow.metal-5 {
-  background: conic-gradient(from 210deg, #4fc3f7, #fff, #b3f0ff, #81d4fa, #fff, #e0f7ff, #4fc3f7);
-}
-.medal__grow.metal-6 {
-  background: conic-gradient(from 210deg, #ff5f6d, #ffe08a, #7b2ff7, #00d4ff, #ffe08a, #ff5f6d, #7b2ff7);
+.medal__ring path {
+  fill: none;
+  stroke-linecap: butt;
+  transition: stroke 0.4s;
 }
 .medal__enamel {
   position: relative;
@@ -842,12 +808,6 @@ button:disabled {
 }
 .medal__enamel svg {
   filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.25));
-}
-.metal-0 .medal__pin {
-  background: transparent;
-  box-shadow: none;
-  outline: 2px dashed var(--color-line-strong);
-  outline-offset: -2px;
 }
 .metal-0 .medal__enamel {
   background: var(--color-paper-3);
