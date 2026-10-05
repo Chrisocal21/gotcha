@@ -8,7 +8,7 @@
 
 | Project | Status | Last Session | Next Focus |
 |---|---|---|---|
-| Gotcha | Active | 2026-10-03 | Step Zero: pick 5 test subjects and draft the vision prompt |
+| Gotcha | Active | 2026-10-04 | Review the Field Expedition redesign, deploy it, then the Step Zero test subjects |
 
 ---
 
@@ -87,6 +87,99 @@
 ### Next Session
 
 Start Step Zero: pick the 5 test subjects and draft the vision prompt.
+
+---
+
+## Gotcha -- Session -- 2026-10-04 (Field Expedition redesign)
+
+**Status:** Active
+
+---
+
+### What We Decided
+
+- New direction, "Field Expedition": a grown-up take on Pokemon GO. Its structure (catch, Gotcha, rewards, level up, come back tomorrow) with a nature expedition's look.
+- Every catch gets a GOTCHA moment, with the species named, before the rarity reveal.
+- A game layer on top of the cards: XP, levels 1 to 50 with ranks, 16 badges (bronze to platinum), three daily field tasks with a daily stamp, a species journal and a day-by-day journal.
+- All progress is worked out on the device from the cards. No server change, no new cost, no locked rule changed.
+- Three sample cards (painted from text, not anyone's photo) welcome new players.
+
+---
+
+### What Changed
+
+- New Explorer page and navigation (raised Catch button on phones, level chip on computers).
+- Phone camera is full screen, like a camera app.
+- Collection gained a Species view and a class filter.
+- Cards gained class marks, a highlighted strongest stat and the catch date. New card back.
+- Fixed: after a catch, "Keep catching" left the shutter switched off until the page was reloaded.
+
+---
+
+### Open Questions Added
+
+- Are the XP values, level curve and badge goals right
+- Do the rank and badge names fit
+- Should XP and badges move to the server with sign-in
+- Should players be able to nickname a card
+
+---
+
+### Open Questions Closed
+
+- Keep the engagement hooks (yes, and go further)
+
+---
+
+### Documents Updated
+
+- GOTCHA_DESIGN.md rewritten for the new direction
+- GOTCHA_PROGRESS_TRACKER.md (Feature 1.8, now 68%)
+- GOTCHA_OPEN_QUESTIONS.md
+- GOTCHA_PROJECT_LOG.md (this entry)
+
+---
+
+### Next Session
+
+Review the redesign at localhost:3000, deploy it to Vercel, then pick the Step Zero test subjects.
+
+---
+
+## Gotcha -- Session -- 2026-10-04 (feedback round)
+
+**Status:** Active
+
+---
+
+### What Chris Asked For
+
+- Header and bottom bar floating and fixed in place, getting out of the way while scrolling and never covering content.
+- An app, not a tech thing: Settings cleaner and better organized.
+- Less at once: cleaner and more organized everywhere.
+- One photo of two dogs should catch two dogs, one card each, as a special multi-animal catch.
+
+---
+
+### What Changed
+
+- Floating glass bars that slide away while scrolling down and return on any scroll up.
+- Settings rebuilt like a phone's settings app, with short pages for the longer explanations. Customize matches.
+- Explorer split into Overview, Badges and Journal tabs. One Today panel on the camera. One filter row in Collection. Plain labels instead of monospace ones outside the cards.
+- Multi-animal catch: up to 3 animals per photo, each painted alone with its own rarity, each using one catch. GOTCHA ×2, one-by-one reveal, "Caught together" XP, Pack Leader badge, "caught with" links. Worker changed; no database change.
+
+---
+
+### Open Questions Added
+
+- Should each animal in a multi-animal photo use a catch (built: yes)
+- Is three animals per photo the right limit
+
+---
+
+### Next Session
+
+Look over the changes, deploy the app and the Worker, then try one real photo with two animals in it.
 
 ---
 

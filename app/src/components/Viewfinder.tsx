@@ -2,8 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CardBack } from "./GameCard";
 import { Button } from "./ui";
 
-// Draft wording (open question in GOTCHA_OPEN_QUESTIONS.md).
+// Draft wording (open question in GOTCHA_OPEN_QUESTIONS.md). The camera shows the short form on one
+// line; the welcome screen and Privacy and safety carry the full message.
 export const DISTANCE_MESSAGE = "Keep your distance. Never approach snakes, stinging insects, or wild animals for a photo.";
+const DISTANCE_SHORT = "Keep a safe distance from wild animals";
 
 export type CameraState = "starting" | "ready" | "denied" | "busy" | "unavailable" | "insecure";
 
@@ -81,12 +83,12 @@ const MESSAGES: Record<Exclude<CameraState, "ready" | "starting">, { title: stri
 
 export function Viewfinder({
   camera,
-  flash = false,
+  flash = 0,
   onTestFrame,
   children,
 }: {
   camera: Camera;
-  flash?: boolean;
+  flash?: number; // bump to fire the shutter flash again
   onTestFrame?: () => void;
   children?: ReactNode;
 }) {
@@ -94,7 +96,7 @@ export function Viewfinder({
   const message = state !== "ready" && state !== "starting" ? MESSAGES[state] : null;
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[28px] bg-night shadow-lift">
+    <div className="viewfinder relative h-full w-full overflow-hidden bg-night">
       <video
         ref={videoRef}
         autoPlay
@@ -157,14 +159,14 @@ export function Viewfinder({
       )}
 
       {state === "ready" && (
-        <div className="absolute inset-x-3 top-3 flex items-start gap-2.5 rounded-2xl bg-black/50 px-3.5 py-2.5 text-[12.5px] leading-snug text-white/90 backdrop-blur-md sm:inset-x-auto sm:left-3 sm:max-w-[420px]">
-          <span className="mt-[5px] size-1.5 shrink-0 rounded-full bg-sun" />
-          {DISTANCE_MESSAGE}
+        <div className="safety-note" title={DISTANCE_MESSAGE}>
+          <span className="size-1.5 shrink-0 rounded-full bg-sun" />
+          {DISTANCE_SHORT}
         </div>
       )}
 
       {children}
-      {flash && <div className="flash" />}
+      {flash > 0 && <div key={flash} className="flash" />}
     </div>
   );
 }

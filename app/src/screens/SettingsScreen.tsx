@@ -5,36 +5,110 @@ import {
   canTiltWithPhone,
   canVibrate,
   getAutoSave,
+  getExplorerName,
   getGyro,
   getHaptics,
-  setAutoSave,
-  setGyro,
   getReduceMotion,
   getTheme,
+  setAutoSave,
+  setGyro,
   setHaptics,
   setReduceMotion,
   setTheme,
   type Theme,
 } from "../lib/prefs";
 import { isSoundOn, setSoundOn } from "../lib/sfx";
+import { MEDALS, XP, type Progress } from "../lib/progress";
 import { BOOST, ODDS, TIERS, tierClass } from "../lib/tiers";
-import { Button, Label, Panel, Segmented, Switch } from "../components/ui";
+import { LevelBadge, xpText } from "../components/game";
+import {
+  IconCustomize,
+  IconDeveloper,
+  IconHowTo,
+  IconMotion,
+  IconNext,
+  IconPhoto,
+  IconPrivacy,
+  IconRarity,
+  IconReplay,
+  IconReport,
+  IconSound,
+  IconTheme,
+  IconTilt,
+  IconTrophy,
+  IconVibrate,
+} from "../components/glyphs";
+import { Group, Row, SubpageHeader } from "../components/SettingsList";
+import { Button, Segmented, Switch } from "../components/ui";
 
 const THEMES: { value: Theme; label: string }[] = [
-  { value: "system", label: "System" },
+  { value: "system", label: "Auto" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ];
 
+// Tile colors for each row, so the list is easy to scan.
+const TONE = {
+  theme: "#5b6cf0",
+  customize: "#e0447c",
+  sound: "#ff8a1f",
+  vibrate: "#e5484d",
+  tilt: "#12a594",
+  motion: "#3e7bfa",
+  photo: "#30a46c",
+  howto: "#0f6e53",
+  rarity: "#8b4de0",
+  trophy: "#d99a12",
+  replay: "#2f8fe0",
+  report: "#f76b15",
+  privacy: "#64748b",
+  developer: "#475569",
+};
+
 export default function SettingsScreen({
+  topic,
   status,
   collection,
+  progress,
+  refreshStatus,
+  refreshCollection,
+  onShowWelcome,
+}: {
+  topic?: string;
+  status: Status | null;
+  collection: Collection | null;
+  progress: Progress | null;
+  refreshStatus: () => Promise<Status | null>;
+  refreshCollection: () => Promise<unknown>;
+  onShowWelcome: () => void;
+}) {
+  if (topic === "how") return <HowToPlay cap={status?.cap ?? 10} />;
+  if (topic === "odds") return <RarityAndOdds />;
+  if (topic === "levels") return <LevelsAndBadges />;
+  if (topic === "privacy") return <PrivacyAndSafety />;
+  return (
+    <SettingsHome
+      status={status}
+      collection={collection}
+      progress={progress}
+      refreshStatus={refreshStatus}
+      refreshCollection={refreshCollection}
+      onShowWelcome={onShowWelcome}
+    />
+  );
+}
+
+function SettingsHome({
+  status,
+  collection,
+  progress,
   refreshStatus,
   refreshCollection,
   onShowWelcome,
 }: {
   status: Status | null;
   collection: Collection | null;
+  progress: Progress | null;
   refreshStatus: () => Promise<Status | null>;
   refreshCollection: () => Promise<unknown>;
   onShowWelcome: () => void;
@@ -45,158 +119,6 @@ export default function SettingsScreen({
   const [haptics, setHapticsState] = useState(getHaptics);
   const [autoSave, setAutoSaveState] = useState(getAutoSave);
   const [gyro, setGyroState] = useState(getGyro);
-
-  return (
-    <div className="page max-w-[760px]">
-      <h1 className="font-display text-[28px] leading-none font-extrabold tracking-tight lg:text-[36px]">Settings</h1>
-
-      <Section title="Appearance">
-        <Row title="Customize" detail="Colors, background, corners, fonts and your card back">
-          <a
-            href="#/customize"
-            className="inline-flex h-10 items-center rounded-(--r-btn) border border-line-strong bg-paper px-4 text-[14px] font-semibold shadow-soft transition hover:bg-paper-2"
-          >
-            Open
-          </a>
-        </Row>
-        <Row title="Theme" detail="System follows your device's light or dark setting">
-          <Segmented
-            size="sm"
-            value={theme}
-            options={THEMES}
-            onChange={(t) => {
-              setThemeState(t);
-              setTheme(t);
-            }}
-          />
-        </Row>
-        <Row title="Reduce motion" detail="Calmer animations, no screen flashes">
-          <Switch
-            label="Reduce motion"
-            checked={calm}
-            onChange={(on) => {
-              setCalm(on);
-              setReduceMotion(on);
-            }}
-          />
-        </Row>
-      </Section>
-
-      <Section title="Sound and feel">
-        <Row title="Sound effects" detail="Shutter, reveal and rarity sounds">
-          <Switch
-            label="Sound effects"
-            checked={sound}
-            onChange={(on) => {
-              setSound(on);
-              setSoundOn(on);
-            }}
-          />
-        </Row>
-        {canTiltWithPhone() && (
-          <Row title="Tilt with phone motion" detail="Cards lean as you move your phone, so they feel like they're in your hand">
-            <Switch
-              label="Tilt with phone motion"
-              checked={gyro}
-              onChange={(on) => {
-                setGyroState(on);
-                setGyro(on);
-              }}
-            />
-          </Row>
-        )}
-        {canVibrate() && (
-          <Row title="Vibration" detail="A buzz when you catch and when a card is revealed">
-            <Switch
-              label="Vibration"
-              checked={haptics}
-              onChange={(on) => {
-                setHapticsState(on);
-                setHaptics(on);
-              }}
-            />
-          </Row>
-        )}
-      </Section>
-
-      <Section title="Your photos">
-        <Row title="Save every original photo" detail="Downloads the full-quality photo to this device after each catch. Gotcha never keeps a copy.">
-          <Switch
-            label="Save every original photo"
-            checked={autoSave}
-            onChange={(on) => {
-              setAutoSaveState(on);
-              setAutoSave(on);
-            }}
-          />
-        </Row>
-        <p className="py-4 text-[13.5px] leading-relaxed text-ink-3">
-          You can also save a single photo with the Save original photo button when a card is revealed. On a phone it opens the share
-          sheet, where you can choose Save Image. Photos are only available right after the catch.
-        </p>
-      </Section>
-
-      <Section title="How Gotcha works">
-        <div className="py-4 text-[14.5px] leading-relaxed text-ink-2">
-          <p>
-            You get <b className="text-ink">{status?.cap ?? 10} catches a day</b>. Photos with no animal in them never use one. Any
-            real animal counts, and so do statues of animals.
-          </p>
-          <p className="mt-3">
-            Rarity is pure luck, rolled once when the card is made. It never changes, and any animal can pull a Legendary. Rarer cards
-            get a bigger boost to their stats.
-          </p>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-line">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-6 bg-paper-2 px-4 py-2 font-mono text-[11px] tracking-[0.12em] text-ink-3 uppercase">
-              <span>Rarity</span>
-              <span className="text-right">Odds</span>
-              <span className="w-24 text-right">Stat boost</span>
-            </div>
-            {TIERS.map((t) => (
-              <div key={t} className={`grid grid-cols-[1fr_auto_auto] gap-x-6 border-t border-line px-4 py-2.5 text-[14px] ${tierClass(t)}`}>
-                <span className="flex items-center gap-2.5 font-semibold text-ink">
-                  <span className="tier-dot" />
-                  {t}
-                </span>
-                <span className="text-right tabular">{ODDS[t]}%</span>
-                <span className="w-24 text-right tabular">{BOOST[t] === 0 ? "None" : `+${Math.round(BOOST[t] * 100)}%`}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      <Section title="Privacy and safety">
-        <div className="space-y-3 py-4 text-[14.5px] leading-relaxed text-ink-2">
-          <p>
-            <b className="text-ink">Your photos are never stored.</b> Each photo is read once to make your card, then thrown away.
-            Only the painted card and its facts are saved.
-          </p>
-          <p>
-            <b className="text-ink">People never appear on cards.</b> If someone is in your photo, they are left out of the painting.
-          </p>
-          <p>
-            <b className="text-ink">Keep your distance.</b> Never approach snakes, stinging insects or wild animals for a photo.
-          </p>
-        </div>
-      </Section>
-
-      <Section title="Account">
-        <Row title="Test account" detail="Everyone testing shares this account for now. Personal sign-in is coming.">
-          <span className="rounded-full bg-paper-3 px-3 py-1 text-[12.5px] font-semibold text-ink-2">Shared</span>
-        </Row>
-      </Section>
-
-      <AboutSection status={status} onShowWelcome={onShowWelcome} />
-
-      {import.meta.env.DEV && (
-        <DeveloperTools status={status} collection={collection} refreshStatus={refreshStatus} refreshCollection={refreshCollection} />
-      )}
-    </div>
-  );
-}
-
-function AboutSection({ status, onShowWelcome }: { status: Status | null; onShowWelcome: () => void }) {
   const [copied, setCopied] = useState(false);
 
   async function copyDiagnostics() {
@@ -219,23 +141,237 @@ function AboutSection({ status, onShowWelcome }: { status: Status | null; onShow
   }
 
   return (
-    <Section title="About">
-      <Row title="Introduction" detail="Replay the welcome guide">
-        <Button variant="secondary" size="sm" onClick={onShowWelcome}>
-          Show
-        </Button>
-      </Row>
-      <Row title="Report a problem" detail={copied ? "Copied. Paste it into your message." : "Copies your version and device details to send with your report"}>
-        <Button variant="secondary" size="sm" onClick={copyDiagnostics}>
-          {copied ? "Copied" : "Copy details"}
-        </Button>
-      </Row>
-      <Row title="Version" detail="Gotcha, first test build">
-        <span className="font-mono text-[13px] text-ink-2">{__APP_VERSION__}</span>
-      </Row>
-    </Section>
+    <div className="page max-w-[680px]">
+      <h1 className="font-display text-[30px] leading-none font-extrabold tracking-tight lg:text-[40px]">Settings</h1>
+
+      {progress && (
+        <a href="#/explorer" className="settings-profile mt-6">
+          <LevelBadge level={progress.level} ratio={progress.ratio} size={54} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[17px] font-bold">{getExplorerName() || "Explorer"}</span>
+            <span className="block text-[13.5px] text-ink-3">
+              Level {progress.level} · {progress.rank} · {xpText(progress.xp)}
+            </span>
+          </span>
+          <IconNext size={18} className="text-ink-3" />
+        </a>
+      )}
+
+      <Group title="Appearance">
+        <Row icon={IconTheme} tone={TONE.theme} title="Theme">
+          <Segmented
+            size="sm"
+            value={theme}
+            options={THEMES}
+            onChange={(t) => {
+              setThemeState(t);
+              setTheme(t);
+            }}
+          />
+        </Row>
+        <Row icon={IconCustomize} tone={TONE.customize} title="Customize" detail="Colors, card back and fonts" href="#/customize" />
+      </Group>
+
+      <Group title="Sound and feel">
+        <Row icon={IconSound} tone={TONE.sound} title="Sound effects">
+          <Switch
+            label="Sound effects"
+            checked={sound}
+            onChange={(on) => {
+              setSound(on);
+              setSoundOn(on);
+            }}
+          />
+        </Row>
+        {canVibrate() && (
+          <Row icon={IconVibrate} tone={TONE.vibrate} title="Vibration">
+            <Switch
+              label="Vibration"
+              checked={haptics}
+              onChange={(on) => {
+                setHapticsState(on);
+                setHaptics(on);
+              }}
+            />
+          </Row>
+        )}
+        {canTiltWithPhone() && (
+          <Row icon={IconTilt} tone={TONE.tilt} title="Tilt cards with your phone">
+            <Switch
+              label="Tilt cards with your phone"
+              checked={gyro}
+              onChange={(on) => {
+                setGyroState(on);
+                setGyro(on);
+              }}
+            />
+          </Row>
+        )}
+        <Row icon={IconMotion} tone={TONE.motion} title="Reduce motion">
+          <Switch
+            label="Reduce motion"
+            checked={calm}
+            onChange={(on) => {
+              setCalm(on);
+              setReduceMotion(on);
+            }}
+          />
+        </Row>
+      </Group>
+
+      <Group title="Photos" footer="Saves the full-quality photo to this device after each catch. Gotcha never keeps a copy.">
+        <Row icon={IconPhoto} tone={TONE.photo} title="Save every original photo">
+          <Switch
+            label="Save every original photo"
+            checked={autoSave}
+            onChange={(on) => {
+              setAutoSaveState(on);
+              setAutoSave(on);
+            }}
+          />
+        </Row>
+      </Group>
+
+      <Group title="The game">
+        <Row icon={IconHowTo} tone={TONE.howto} title="How to play" href="#/settings/how" />
+        <Row icon={IconRarity} tone={TONE.rarity} title="Rarity and odds" href="#/settings/odds" />
+        <Row icon={IconTrophy} tone={TONE.trophy} title="Levels and badges" href="#/settings/levels" />
+      </Group>
+
+      <Group title="Help">
+        <Row icon={IconReplay} tone={TONE.replay} title="Replay the welcome" onClick={onShowWelcome} />
+        <Row icon={IconReport} tone={TONE.report} title="Report a problem" detail={copied ? "Details copied. Paste them into your message." : "Copies details to send with your report"} onClick={copyDiagnostics} />
+        <Row icon={IconPrivacy} tone={TONE.privacy} title="Privacy and safety" href="#/settings/privacy" />
+      </Group>
+
+      {import.meta.env.DEV && (
+        <DeveloperTools status={status} collection={collection} refreshStatus={refreshStatus} refreshCollection={refreshCollection} />
+      )}
+
+      <p className="mt-8 text-center text-[12.5px] leading-relaxed text-ink-3">
+        Gotcha {__APP_VERSION__} · Everyone testing shares one account for now.
+      </p>
+    </div>
   );
 }
+
+// ---------- Pages under Settings ----------
+
+function HowToPlay({ cap }: { cap: number }) {
+  const steps: [string, string][] = [
+    ["Spot an animal", "Pets, birds, bugs, wildlife, even a statue of one. Any real animal counts."],
+    ["Say gotcha", "Point the camera and press the catch button. Your photo becomes a painted card."],
+    ["See what you got", "Every card gets a random rarity, from Common to Legendary, and real stats for its species."],
+    ["Collect and level up", "Earn XP, fill your species journal, finish the daily field tasks and win badges."],
+  ];
+  const tips: [string, string][] = [
+    ["Two animals in one photo?", "You catch them both, one card each. Each one uses a catch."],
+    [`${cap} catches a day`, "They reset every day. Photos with no animal in them never use one."],
+    ["Keep your distance", "Never approach snakes, stinging insects or wild animals for a photo."],
+  ];
+  return (
+    <div className="page max-w-[680px]">
+      <SubpageHeader title="How to play" />
+      <Group>
+        {steps.map(([title, body], i) => (
+          <div key={title} className="flex gap-4 px-4 py-4 [&+&]:border-t [&+&]:border-line">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-canopy-soft font-display font-bold text-canopy">{i + 1}</span>
+            <div>
+              <div className="text-[15.5px] font-semibold">{title}</div>
+              <p className="mt-0.5 text-[14px] leading-relaxed text-ink-2">{body}</p>
+            </div>
+          </div>
+        ))}
+      </Group>
+      <Group title="Good to know">
+        {tips.map(([title, body]) => (
+          <div key={title} className="px-4 py-3.5 [&+&]:border-t [&+&]:border-line">
+            <div className="text-[15px] font-semibold">{title}</div>
+            <p className="mt-0.5 text-[14px] leading-relaxed text-ink-2">{body}</p>
+          </div>
+        ))}
+      </Group>
+    </div>
+  );
+}
+
+function RarityAndOdds() {
+  return (
+    <div className="page max-w-[680px]">
+      <SubpageHeader title="Rarity and odds" />
+      <p className="text-[15px] leading-relaxed text-ink-2">
+        Rarity is pure luck, rolled once when a card is made. It never changes, and any animal can be a Legendary. Rarer cards get a bigger
+        boost to their stats.
+      </p>
+      <Group>
+        {TIERS.map((t) => (
+          <div key={t} className={`flex items-center gap-3 px-4 py-3.5 [&+&]:border-t [&+&]:border-line ${tierClass(t)}`}>
+            <span className="tier-dot" />
+            <span className="flex-1 text-[15.5px] font-semibold">{t}</span>
+            <span className="w-28 text-right text-[13.5px] text-ink-3 tabular">{BOOST[t] === 0 ? "No boost" : `+${Math.round(BOOST[t] * 100)}% stats`}</span>
+            <span className="tier-ink w-12 text-right font-display text-[17px] font-bold tabular">{ODDS[t]}%</span>
+          </div>
+        ))}
+      </Group>
+    </div>
+  );
+}
+
+function LevelsAndBadges() {
+  const rules: [string, string][] = [
+    ["Any catch", `+${XP.catch}`],
+    ["Rarity bonus", `+${XP.rarity.Uncommon} to +${XP.rarity.Legendary}`],
+    ["A species you've never caught", `+${XP.newSpecies}`],
+    ["Animals caught together, each extra one", `+${XP.together}`],
+    ["Each field task", "+200 to +500"],
+    ["All three tasks in a day", `+${XP.stamp}`],
+  ];
+  return (
+    <div className="page max-w-[680px]">
+      <SubpageHeader title="Levels and badges" />
+      <p className="text-[15px] leading-relaxed text-ink-2">
+        Every catch earns XP, and XP raises your explorer level, up to level 50. It's worked out on this device from the cards you own, so it never
+        changes a card, the odds or your daily catches.
+      </p>
+      <Group title="XP">
+        {rules.map(([what, xp]) => (
+          <div key={what} className="flex items-center justify-between gap-4 px-4 py-3.5 [&+&]:border-t [&+&]:border-line">
+            <span className="text-[15px]">{what}</span>
+            <span className="shrink-0 font-display text-[15.5px] font-bold text-xp-ink tabular">{xp}</span>
+          </div>
+        ))}
+      </Group>
+      <Group title="Badges" footer="Each badge goes bronze, silver, gold, then platinum. Three new field tasks appear every day, the same for everyone.">
+        <div className="px-4 py-3.5 text-[15px] leading-relaxed">
+          {MEDALS.length} badges to earn, from Collector and Naturalist to one for each animal class. See your progress on the Explorer page.
+        </div>
+      </Group>
+    </div>
+  );
+}
+
+function PrivacyAndSafety() {
+  const items: [string, string][] = [
+    ["Your photos are never stored", "Each photo is read once to make your cards, then thrown away. Only the painted cards and their facts are saved."],
+    ["People never appear on cards", "If someone is in your photo, they're left out of the painting."],
+    ["Keep your distance", "Never approach snakes, stinging insects or wild animals for a photo."],
+  ];
+  return (
+    <div className="page max-w-[680px]">
+      <SubpageHeader title="Privacy and safety" />
+      <Group>
+        {items.map(([title, body]) => (
+          <div key={title} className="px-4 py-4 [&+&]:border-t [&+&]:border-line">
+            <div className="text-[15.5px] font-semibold">{title}</div>
+            <p className="mt-0.5 text-[14px] leading-relaxed text-ink-2">{body}</p>
+          </div>
+        ))}
+      </Group>
+    </div>
+  );
+}
+
+// ---------- Developer tools (development builds only) ----------
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -285,15 +421,14 @@ function DeveloperTools({
     setProgress(null);
   }
 
+  const footer: ReactNode = error ? <span className="text-danger">{error}</span> : note ? <span className="text-canopy">{note}</span> : "Only in development builds. Testers never see this.";
+
   return (
-    <Section title="Developer tools" hint="Only visible while developing. Not part of a tester build.">
-      <Row
-        title={live ? "AI connected" : "Sample mode"}
-        detail={live ? "Using GPT-4o and gpt-image-1. The key lives in worker/.dev.vars." : "No OpenAI key found in worker/.dev.vars, so catches use sample animals."}
-      >
-        <span className={`size-3 rounded-full ${live ? "bg-uncommon" : "bg-ember"}`} />
+    <Group title="Developer" footer={footer}>
+      <Row icon={IconDeveloper} tone={TONE.developer} title={live ? "AI connected" : "Sample mode"} detail={live ? "GPT-4o and gpt-image-1, key in worker/.dev.vars" : "No OpenAI key, catches use sample animals"}>
+        <span className={`size-2.5 rounded-full ${live ? "bg-uncommon" : "bg-ember"}`} />
       </Row>
-      <Row title="Reset today's catches" detail={status ? `${status.used} of ${status.cap} used today` : "Gives back today's catches"}>
+      <Row icon={IconDeveloper} tone={TONE.developer} title="Reset today's catches" detail={status ? `${status.used} of ${status.cap} used today` : undefined}>
         <Button
           variant="secondary"
           size="sm"
@@ -306,7 +441,7 @@ function DeveloperTools({
           Reset
         </Button>
       </Row>
-      <Row title="Remove sample cards" detail={samples ? `Deletes ${plural(samples, "sample card")} made without AI` : "There are no sample cards"}>
+      <Row icon={IconDeveloper} tone={TONE.developer} title="Remove sample cards" detail={samples ? plural(samples, "sample card") : "None"}>
         <Button
           variant="secondary"
           size="sm"
@@ -322,43 +457,16 @@ function DeveloperTools({
       </Row>
       {todo.length > 0 && (
         <Row
-          title={progress ? `Painting card ${Math.min(progress.done + 1, progress.total)} of ${progress.total}` : `Paint ${plural(todo.length, "sample card")}`}
-          detail={live ? `Replaces placeholder art with real illustrations. Uses ${plural(todo.length, "image")}.` : "Needs an OpenAI key first."}
+          icon={IconDeveloper}
+          tone={TONE.developer}
+          title={progress ? `Painting ${Math.min(progress.done + 1, progress.total)} of ${progress.total}` : `Paint ${plural(todo.length, "sample card")}`}
+          detail={live ? `Uses ${plural(todo.length, "image")}` : "Needs an OpenAI key first"}
         >
           <Button variant="sun" size="sm" disabled={!live || !!progress} onClick={paintAll}>
             {progress ? "Painting" : "Paint"}
           </Button>
         </Row>
       )}
-      {progress && (
-        <div className="mb-4 h-2 overflow-hidden rounded-full bg-paper-3">
-          <div className="sun-fill h-full rounded-full transition-all duration-500" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
-        </div>
-      )}
-      {error && <p className="pb-4 text-[14px] font-medium text-danger">{error}</p>}
-      {note && <p className="fade-in pb-4 text-[13.5px] font-medium text-canopy">{note}</p>}
-    </Section>
-  );
-}
-
-function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
-  return (
-    <Panel className="mt-3 px-6 pt-5 first-of-type:mt-6">
-      <Label>{title}</Label>
-      {hint && <p className="mt-1.5 text-[12.5px] text-ink-3">{hint}</p>}
-      <div className="divide-y divide-line">{children}</div>
-    </Panel>
-  );
-}
-
-function Row({ title, detail, children }: { title: string; detail: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-4">
-      <div className="min-w-0">
-        <div className="text-[15.5px] font-semibold">{title}</div>
-        <div className="mt-0.5 text-[13.5px] leading-snug text-ink-3">{detail}</div>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
+    </Group>
   );
 }

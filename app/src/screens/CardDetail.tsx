@@ -1,19 +1,24 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { scoreOf, TRAIT_KEYS, TRAIT_LABELS, type Card } from "../lib/api";
-import { classClass, classLabel } from "../lib/classes";
-import { formatCaught, pad3 } from "../lib/format";
+import { classClass } from "../lib/classes";
+import { formatCaught, pad3, plural } from "../lib/format";
 import { useEscape, useSwipe } from "../lib/hooks";
-import { boostLabel, tierClass } from "../lib/tiers";
+import { CLASS_NAMES, classKeyOf, type Progress } from "../lib/progress";
+import { boostLabel, ODDS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
-import { IconClose } from "../components/icons";
+import { ClassEmblem, SectionTitle, xpText } from "../components/game";
+import { IconClose, IconNext, IconPrev } from "../components/glyphs";
 import { IconButton, Label, Panel } from "../components/ui";
 import CardZoom from "./CardZoom";
 
 // Boosted stats run up to 200 (100 times the Legendary boost), so bars use that scale.
 const STAT_MAX = 200;
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export default function CardDetail({
   card,
+  progress,
   prev,
   next,
   index,
@@ -22,6 +27,7 @@ export default function CardDetail({
   onClose,
 }: {
   card: Card;
+  progress: Progress | null;
   prev: string | null;
   next: string | null;
   index: number;
@@ -33,6 +39,7 @@ export default function CardDetail({
   useEscape(() => (zoom ? setZoom(false) : onClose()));
   const score = scoreOf(card.stats);
   const natural = scoreOf(card.traits);
+  const cls = classKeyOf(card);
 
   const goPrev = () => prev && onMove(prev);
   const goNext = () => next && onMove(next);
@@ -58,94 +65,84 @@ export default function CardDetail({
     >
       {zoom && <CardZoom card={card} prev={prev} next={next} index={index} total={total} onMove={onMove} onClose={() => setZoom(false)} />}
       <div
-        className={`rise-in relative min-h-full bg-sand lg:mx-auto lg:my-10 lg:min-h-0 lg:max-w-[1040px] lg:rounded-[32px] lg:shadow-lift ${tierClass(card.rarity)} ${classClass(card.animalClass, card.isStatue)}`}
+        className={`rise-in relative min-h-full bg-sand lg:mx-auto lg:my-10 lg:min-h-0 lg:max-w-[1080px] lg:rounded-[32px] lg:shadow-lift ${tierClass(card.rarity)} ${classClass(card.animalClass, card.isStatue)}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="pt-safe flex items-center justify-between px-4 lg:px-8 lg:pt-6">
-          <span className="font-mono text-[12.5px] tracking-[0.1em] text-ink-3">No. {pad3(card.number)}</span>
+          <span className="font-mono text-[12.5px] tracking-[0.1em] text-ink-3">
+            No. {pad3(card.number)}
+            {index >= 0 && total > 1 ? ` · ${index + 1} of ${total}` : ""}
+          </span>
           <IconButton label="Close" onClick={onClose} className="-mr-2">
-            <IconClose />
+            <IconClose size={22} strokeWidth={1.8} />
           </IconButton>
         </div>
 
-        <div className="grid gap-8 px-4 pt-2 pb-12 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:pb-8">
+        <div className="grid gap-8 px-4 pt-2 pb-12 lg:grid-cols-[420px_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:pb-8">
           <div {...swipe} className="lg:sticky lg:top-6 lg:self-start">
-            <div className="relative mx-auto w-[min(86vw,400px)]">
+            <div className="relative mx-auto w-[min(86vw,420px)]">
               <div key={card.id} className="fade-in cursor-zoom-in" onClick={() => setZoom(true)}>
                 <CardFront card={card} tilt />
               </div>
+            </div>
+            <div className="mx-auto mt-4 flex w-[min(86vw,420px)] items-center justify-between gap-3">
               <NavArrow dir="prev" disabled={!prev} onClick={goPrev} />
+              <p className="text-center text-[12.5px] leading-snug text-ink-3">
+                {window.matchMedia("(pointer: coarse)").matches ? "Tap" : "Click"} the card to hold it and turn it over
+              </p>
               <NavArrow dir="next" disabled={!next} onClick={goNext} />
             </div>
-            <p className="mt-4 text-center text-[12.5px] text-ink-3">Tap to enlarge. Swipe or use arrow keys for the next card.</p>
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <h2 className="font-display text-[34px] leading-none font-extrabold tracking-tight">{card.name}</h2>
-              <p className="mt-2 text-[15px] text-ink-2">
-                {classLabel(card.animalClass, card.isStatue)} Â· {card.species}
-              </p>
-            </div>
-
-            <Panel className="p-5">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2.5 text-[15px] font-semibold">
+          <div className="min-w-0 space-y-4">
+            <header>
+              <h2 className="font-display text-[34px] leading-none font-extrabold tracking-tight lg:text-[40px]">{card.name}</h2>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-2 rounded-full bg-paper py-1 pr-3.5 pl-1 text-[14px] font-semibold shadow-soft">
+                  <ClassEmblem cls={cls} size={26} />
+                  {card.species}
+                </span>
+                <span className="flex items-center gap-2 rounded-full bg-paper px-3.5 py-1.5 text-[14px] font-semibold shadow-soft">
                   <span className="tier-dot" />
                   {card.rarity}
                 </span>
-                <span className="text-[13px] text-ink-3">{boostLabel(card.rarity)}</span>
+                <span className="text-[13.5px] text-ink-3">Caught {formatCaught(card.createdAt)}</span>
               </div>
-              <div className="mt-5 flex items-end justify-between">
+            </header>
+
+            <Panel className="p-5 sm:p-6">
+              <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div className="tier-ink font-display text-[52px] leading-none font-extrabold tracking-tight tabular">{score}</div>
+                  <div className="tier-ink font-display text-[54px] leading-none font-extrabold tracking-tight tabular">{score}</div>
                   <Label className="mt-2">Score</Label>
                 </div>
-                {score > natural && (
-                  <div className="text-right text-[13px] leading-relaxed text-ink-3">
-                    {natural} natural
-                    <br />+{score - natural} from rarity
-                  </div>
-                )}
+                <div className="text-right text-[13px] leading-relaxed text-ink-3">
+                  <div className="font-semibold text-ink-2">{boostLabel(card.rarity)}</div>
+                  {score > natural ? (
+                    <>
+                      {natural} natural, +{score - natural} from rarity
+                    </>
+                  ) : (
+                    `About ${ODDS[card.rarity]} in 100 catches are ${card.rarity}`
+                  )}
+                </div>
               </div>
-              <div className="mt-6 space-y-3.5">
+              <div className="mt-6 space-y-4">
                 {TRAIT_KEYS.map((k) => (
-                  <TraitRow
-                    key={k}
-                    label={TRAIT_LABELS[k]}
-                    base={card.traits[k]}
-                    value={card.stats[k]}
-                    note={card.facts?.trait_notes?.[k]}
-                  />
+                  <TraitRow key={k} label={TRAIT_LABELS[k]} base={card.traits[k]} value={card.stats[k]} note={card.facts?.trait_notes?.[k]} />
                 ))}
+              </div>
+              <div className="mt-6 rounded-2xl bg-paper-2 p-4">
+                <div className="flex items-center gap-2 font-display text-[18px] font-bold">
+                  <span className="size-2.5 rounded-full bg-(--cls)" />
+                  {card.special.name}
+                </div>
+                <p className="mt-1 text-[14.5px] leading-relaxed text-ink-2">{card.special.description}</p>
               </div>
             </Panel>
 
             <FieldGuide card={card} />
-
-            <Panel className="p-5">
-              <Label>Special</Label>
-              <div className="mt-2 font-display text-[22px] leading-tight font-bold">{card.special.name}</div>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{card.special.description}</p>
-            </Panel>
-
-            <Panel className="p-5">
-              <p className="font-display text-[19px] leading-snug font-semibold">{card.description}</p>
-              <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-[14px]">
-                <dt className="text-ink-3">Species</dt>
-                <dd className="text-right">
-                  {card.species}
-                  {card.isStatue ? " (statue)" : ""}
-                </dd>
-                <dt className="text-ink-3">Caught</dt>
-                <dd className="text-right">{formatCaught(card.createdAt)}</dd>
-                <dt className="text-ink-3">Card</dt>
-                <dd className="text-right">
-                  No. {pad3(card.number)}
-                  {card.isSample ? ", sample" : ""}
-                </dd>
-              </dl>
-            </Panel>
+            <CatchRecord card={card} progress={progress} onMove={onMove} />
           </div>
         </div>
       </div>
@@ -154,6 +151,7 @@ export default function CardDetail({
 }
 
 function NavArrow({ dir, disabled, onClick }: { dir: "prev" | "next"; disabled: boolean; onClick: () => void }) {
+  const Icon = dir === "prev" ? IconPrev : IconNext;
   return (
     <button
       aria-label={dir === "prev" ? "Previous card" : "Next card"}
@@ -162,13 +160,9 @@ function NavArrow({ dir, disabled, onClick }: { dir: "prev" | "next"; disabled: 
         e.stopPropagation();
         onClick();
       }}
-      className={`absolute top-1/2 hidden size-11 -translate-y-1/2 place-items-center rounded-full border border-line bg-paper text-ink shadow-soft transition hover:scale-105 disabled:opacity-0 lg:grid ${
-        dir === "prev" ? "-left-16" : "-right-16"
-      }`}
+      className="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-paper text-ink shadow-soft transition hover:scale-105 disabled:opacity-30 disabled:hover:scale-100"
     >
-      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d={dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} />
-      </svg>
+      <Icon size={20} />
     </button>
   );
 }
@@ -195,11 +189,9 @@ function FieldGuide({ card }: { card: Card }) {
   const f = card.facts;
   if (!f) {
     return (
-      <Panel className="p-5">
-        <Label>Field guide</Label>
-        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">
-          This card was made before facts were recorded. New catches include a full field guide.
-        </p>
+      <Panel className="p-5 sm:p-6">
+        <SectionTitle title="Field guide" />
+        <p className="mt-2 text-[14.5px] leading-relaxed text-ink-2">This card was made before facts were recorded. New catches include a full field guide.</p>
       </Panel>
     );
   }
@@ -213,9 +205,8 @@ function FieldGuide({ card }: { card: Card }) {
     ["Status", f.conservation_status],
   ];
   return (
-    <Panel className="p-5">
-      <Label>Field guide</Label>
-      <div className="mt-2 font-display text-[22px] leading-tight font-bold">{f.common_name || card.species}</div>
+    <Panel className="p-5 sm:p-6">
+      <SectionTitle title="Field guide" sub={capitalize(f.common_name || card.species)} />
       <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-[14px]">
         {rows
           .filter(([, v]) => v)
@@ -240,3 +231,69 @@ function FieldGuide({ card }: { card: Card }) {
   );
 }
 
+// The card as a memory: when it was caught, what it meant for the journal, what it earned.
+function CatchRecord({ card, progress, onMove }: { card: Card; progress: Progress | null; onMove: (id: string) => void }) {
+  const lines = progress?.ledger.get(card.id) ?? [];
+  const earned = lines.reduce((s, l) => s + l.xp, 0);
+  const entry = progress?.journal.find((s) => s.key === card.species.trim().toLowerCase());
+  const firstOfKind = entry?.first.id === card.id;
+  const cls = classKeyOf(card);
+  const mates = (progress?.together.get(card.id) ?? []).filter((c) => c.id !== card.id);
+  return (
+    <Panel className="p-5 sm:p-6">
+      <SectionTitle title="Catch record" />
+      <blockquote className="mt-3 border-l-[3px] border-(--cls) pl-4 font-display text-[18px] leading-snug font-semibold">{card.description}</blockquote>
+      <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2.5 text-[14px]">
+        <dt className="text-ink-3">Caught</dt>
+        <dd className="text-right">{formatCaught(card.createdAt)}</dd>
+        <dt className="text-ink-3">Card</dt>
+        <dd className="text-right">
+          No. {pad3(card.number)}, {card.isSample ? "sample card" : "series one"}
+        </dd>
+        {entry && (
+          <>
+            <dt className="text-ink-3">Species</dt>
+            <dd className="text-right">
+              {firstOfKind ? "Your first one" : `Caught ${plural(entry.count, "time")}`}
+              {card.isStatue ? " (statue)" : ""}
+            </dd>
+          </>
+        )}
+        <dt className="text-ink-3">Class</dt>
+        <dd className="text-right">{CLASS_NAMES[cls].one}</dd>
+        {mates.length > 0 && (
+          <>
+            <dt className="text-ink-3">Caught with</dt>
+            <dd className="flex flex-wrap justify-end gap-1.5">
+              {mates.map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => onMove(m.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full bg-paper-2 px-2.5 py-0.5 text-[13px] font-semibold transition hover:bg-paper-3 ${tierClass(m.rarity)}`}
+                >
+                  <span className="tier-dot !size-[7px]" />
+                  {m.name}
+                </button>
+              ))}
+            </dd>
+          </>
+        )}
+      </dl>
+      {earned > 0 && (
+        <div className="mt-5 rounded-2xl bg-xp-soft/70 p-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[13.5px] font-semibold text-xp-ink">Earned on the day</span>
+            <span className="font-display text-[20px] font-extrabold text-xp-ink tabular">+{xpText(earned)}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {lines.map((l) => (
+              <span key={`${l.kind}-${l.label}`} className="rounded-full bg-paper px-2.5 py-1 text-[12px] font-semibold text-ink-2">
+                {l.kind === "task" ? `Task: ${l.label}` : l.label} +{l.xp}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}

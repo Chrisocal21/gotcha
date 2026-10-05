@@ -68,6 +68,10 @@ Nothing below matters until Step Zero holds up.
 - Build-up animation during the 10 to 30 second wait
 - Rarity frame per tier
 
+### Several Animals in One Photo (added Oct 4, 2026)
+- Each animal in the photo becomes its own card, up to 3, each with its own rarity roll and painting
+- Each animal uses one of the day's catches (proposed, see GOTCHA_OPEN_QUESTIONS.md)
+
 ### Collection
 - Card grid and card detail view
 - Empty state for a new user

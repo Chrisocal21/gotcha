@@ -7,7 +7,7 @@ export default function DevUpload({ onPhoto, disabled }: { onPhoto: (shot: Shot)
   if (!import.meta.env.DEV) return null;
   return (
     <label
-      className={`absolute right-3 bottom-3 z-10 cursor-pointer rounded-full border border-white/20 bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-md transition hover:bg-black/70 ${
+      className={`absolute top-[calc(max(env(safe-area-inset-top),12px)+100px)] right-3 z-10 cursor-pointer rounded-full border border-white/20 bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-md transition hover:bg-black/70 lg:top-auto lg:right-4 lg:bottom-4 ${
         disabled ? "pointer-events-none opacity-40" : ""
       }`}
     >

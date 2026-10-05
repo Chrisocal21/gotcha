@@ -65,7 +65,17 @@ export interface Collection {
 }
 
 export type CatchResult =
-  | { status: "caught"; card: Card; newSpecies: boolean; used: number; cap: number }
+  | {
+      status: "caught";
+      card: Card; // the first animal, kept for older servers
+      cards?: Card[]; // every animal in the photo, one card each
+      newSpecies: boolean;
+      newSpeciesIds?: string[];
+      used: number;
+      cap: number;
+      skipped?: number; // animals left out because the day's catches ran out
+      missed?: number; // animals that couldn't be painted (they don't use a catch)
+    }
   | { status: "rejected"; message: string; used: number; cap: number }
   | { status: "capped"; used: number; cap: number; resetsAt: string }
   | { status: "error"; message: string };

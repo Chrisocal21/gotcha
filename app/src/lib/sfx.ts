@@ -118,6 +118,38 @@ export const sfx = {
     tone(c, 392, t, 0.22, 0.07);
     tone(c, 311.1, t + 0.14, 0.32, 0.07);
   },
+  // "Got-cha!": a quick pickup note into a bright landing chord.
+  gotcha() {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime;
+    noise(c, t, 0.08, 0.08, 2600);
+    tone(c, 783.99, t, 0.1, 0.07, "triangle");
+    bell(c, 1046.5, t + 0.1, 0.09);
+    bell(c, 1318.5, t + 0.1, 0.05);
+    bell(c, 1567.98, t + 0.1, 0.035);
+    tone(c, 2093, t + 0.26, 0.3, 0.018, "triangle");
+  },
+  // A soft tick as each reward line lands.
+  tick() {
+    const c = audio();
+    if (!c) return;
+    tone(c, 1760, c.currentTime, 0.06, 0.025, "triangle");
+  },
+  levelUp() {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime;
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => bell(c, f, t + i * 0.07, 0.07));
+    for (let i = 0; i < 5; i++) tone(c, 2349 + i * 220, t + 0.4 + i * 0.05, 0.22, 0.015, "triangle");
+  },
+  badge() {
+    const c = audio();
+    if (!c) return;
+    const t = c.currentTime;
+    bell(c, 1318.5, t, 0.06);
+    bell(c, 1975.5, t + 0.09, 0.05);
+  },
 };
 
 export function haptic(pattern: number | number[]) {

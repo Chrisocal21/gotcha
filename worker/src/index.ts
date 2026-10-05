@@ -1,13 +1,4 @@
-import {
-  analyzePhoto,
-  artPrompt,
-  illustrate,
-  sampleDescription,
-  VISION_PROMPT,
-  type AiEnv,
-  type ArtMode,
-  type Vision,
-} from "./ai";
+import { analyzePhoto, illustrate, sampleDescription, type AiEnv, type ArtMode } from "./ai";
 import {
   applyBoost,
   clampTraits,
@@ -38,7 +29,9 @@ const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 
 // Every card query carries its collection number: 1 for the first card a user caught, and so on.
-const CARD_WITH_NUMBER = `SELECT c.*, (SELECT COUNT(*) FROM cards x WHERE x.user_id = c.user_id AND x.created_at <= c.created_at) AS number
+// Cards from one photo share a created time, so the id breaks the tie (they're numbered -0, -1, -2).
+const CARD_WITH_NUMBER = `SELECT c.*, (SELECT COUNT(*) FROM cards x WHERE x.user_id = c.user_id
+    AND (x.created_at < c.created_at OR (x.created_at = c.created_at AND x.id <= c.id))) AS number
   FROM cards c WHERE c.id = ? AND c.user_id = ?`;
 
 async function caughtToday(env: Env, user: string): Promise<number> {
@@ -112,8 +105,8 @@ async function handleStatus(env: Env, user: string) {
 
 async function handleCollection(env: Env, user: string) {
   const { results } = await env.DB.prepare(
-    `SELECT *, ROW_NUMBER() OVER (ORDER BY created_at ASC) AS number
-     FROM cards WHERE user_id = ? ORDER BY created_at DESC`,
+    `SELECT *, ROW_NUMBER() OVER (ORDER BY created_at ASC, id ASC) AS number
+     FROM cards WHERE user_id = ? ORDER BY created_at DESC, id ASC`,
   )
     .bind(user)
     .all();
@@ -136,54 +129,87 @@ async function handleCatch(req: Request, env: Env, user: string) {
   // The photo lives only in this request's memory and is never stored.
   const { photo, mime, mode } = await readPhoto(req);
   const vision = await analyzePhoto(env, photo, mime);
-  if (vision.verdict === "rejected") {
+  if (vision.verdict === "rejected" || vision.animals.length === 0) {
     return json({ status: "rejected", message: vision.rejection_reason, used, cap });
   }
 
-  const rarity = rollRarity();
-  const traits = clampTraits(vision.traits);
-  const stats = applyBoost(traits, rarity);
-  const art = await illustrate(env, vision, photo, mime, mode, layoutFor(rarity));
+  // Every animal in the photo becomes its own card and uses one of today's catches. If there isn't room
+  // for all of them, the most prominent come first.
+  const finds = vision.animals.slice(0, cap - used);
+  const skipped = vision.animals.length - finds.length;
 
-  const seenBefore = await env.DB.prepare("SELECT 1 FROM cards WHERE user_id = ? AND lower(species) = lower(?) LIMIT 1")
-    .bind(user, vision.species)
-    .first();
+  // All of them are painted at once. One that fails is left out (and doesn't use a catch).
+  const painted = await Promise.allSettled(
+    finds.map(async (find) => {
+      const rarity = rollRarity();
+      const art = await illustrate(env, find, photo, mime, mode, layoutFor(rarity), vision.animals.length);
+      return { find, rarity, art };
+    }),
+  );
+  const made = painted.flatMap((p) => (p.status === "fulfilled" ? [p.value] : []));
+  if (made.length === 0) throw (painted[0] as PromiseRejectedResult).reason;
 
-  const id = crypto.randomUUID();
-  const artKey = `${id}.${art.mime === "image/png" ? "png" : "svg"}`;
-  await env.ART.put(artKey, art.bytes, { httpMetadata: { contentType: art.mime } });
+  const known = await env.DB.prepare("SELECT DISTINCT lower(species) AS species FROM cards WHERE user_id = ?")
+    .bind(user)
+    .all<{ species: string }>();
+  const seen = new Set(known.results.map((r) => r.species));
 
+  // Cards from one photo share an id root and a created time, which is how the app knows they were caught together.
+  const root = crypto.randomUUID();
   const createdAt = new Date().toISOString();
+  const cards = made.map(({ find, rarity, art }, i) => {
+    const id = made.length > 1 ? `${root}-${i}` : root;
+    const traits = clampTraits(find.traits);
+    const species = find.species.toLowerCase();
+    const isNew = !seen.has(species);
+    seen.add(species);
+    return { id, find, rarity, art, traits, stats: applyBoost(traits, rarity), isNew, artKey: `${id}.${art.mime === "image/png" ? "png" : "svg"}` };
+  });
+
+  await Promise.all(cards.map((c) => env.ART.put(c.artKey, c.art.bytes, { httpMetadata: { contentType: c.art.mime } })));
   await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO cards (id, user_id, name, species, is_statue, is_sample, animal_class, rarity, description, traits,
-        stats, special_name, special_description, art_key, created_at, facts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(
-      id,
-      user,
-      vision.name,
-      vision.species,
-      vision.verdict === "statue" ? 1 : 0,
-      env.OPENAI_API_KEY ? 0 : 1,
-      (ANIMAL_CLASSES as readonly string[]).includes(vision.animal_class) ? vision.animal_class : "other",
-      rarity,
-      vision.card_description,
-      JSON.stringify(traits),
-      JSON.stringify(stats),
-      vision.special.name,
-      vision.special.description,
-      artKey,
-      createdAt,
-      JSON.stringify(vision.facts ?? {}),
+    ...cards.map((c) =>
+      env.DB.prepare(
+        `INSERT INTO cards (id, user_id, name, species, is_statue, is_sample, animal_class, rarity, description, traits,
+          stats, special_name, special_description, art_key, created_at, facts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      ).bind(
+        c.id,
+        user,
+        c.find.name,
+        c.find.species,
+        c.find.kind === "statue" ? 1 : 0,
+        env.OPENAI_API_KEY ? 0 : 1,
+        (ANIMAL_CLASSES as readonly string[]).includes(c.find.animal_class) ? c.find.animal_class : "other",
+        c.rarity,
+        c.find.card_description,
+        JSON.stringify(c.traits),
+        JSON.stringify(c.stats),
+        c.find.special.name,
+        c.find.special.description,
+        c.artKey,
+        createdAt,
+        JSON.stringify(c.find.facts ?? {}),
+      ),
     ),
     env.DB.prepare(
-      `INSERT INTO daily_counts (user_id, day, count) VALUES (?, ?, 1)
-       ON CONFLICT (user_id, day) DO UPDATE SET count = count + 1`,
-    ).bind(user, utcDay()),
+      `INSERT INTO daily_counts (user_id, day, count) VALUES (?, ?, ?)
+       ON CONFLICT (user_id, day) DO UPDATE SET count = count + excluded.count`,
+    ).bind(user, utcDay(), cards.length),
   ]);
 
-  const row = await env.DB.prepare(CARD_WITH_NUMBER).bind(id, user).first();
-  return json({ status: "caught", card: rowToCard(row), newSpecies: !seenBefore, used: used + 1, cap });
+  const saved = [];
+  for (const c of cards) saved.push(rowToCard(await env.DB.prepare(CARD_WITH_NUMBER).bind(c.id, user).first()));
+  return json({
+    status: "caught",
+    card: saved[0],
+    cards: saved,
+    newSpecies: cards[0].isNew,
+    newSpeciesIds: cards.filter((c) => c.isNew).map((c) => c.id),
+    used: used + cards.length,
+    cap,
+    skipped, // animals in the photo with no catches left for them
+    missed: finds.length - cards.length, // animals that couldn't be painted
+  });
 }
 
 async function paintSample(env: Env, user: string, id: string) {
@@ -192,12 +218,13 @@ async function paintSample(env: Env, user: string, id: string) {
   if (!row) return json({ error: "Not found" }, 404);
   if (!row.is_sample || !String(row.art_key).endsWith(".svg")) return json({ card: rowToCard(row) });
 
-  const vision = {
-    verdict: row.is_statue ? "statue" : "animal",
+  const subject = {
+    kind: row.is_statue ? ("statue" as const) : ("animal" as const),
     species: row.species,
+    position: "",
     visual_description: sampleDescription(row.species) ?? `A typical ${row.species}, shown clearly and in full.`,
-  } as Vision;
-  const art = await illustrate(env, vision, new Uint8Array(), "image/jpeg", "text", layoutFor(row.rarity));
+  };
+  const art = await illustrate(env, subject, new Uint8Array(), "image/jpeg", "text", layoutFor(row.rarity));
   const artKey = `${row.id}-${Date.now()}.png`;
   await env.ART.put(artKey, art.bytes, { httpMetadata: { contentType: art.mime } });
   await env.DB.prepare("UPDATE cards SET art_key = ? WHERE id = ? AND user_id = ?").bind(artKey, row.id, user).run();

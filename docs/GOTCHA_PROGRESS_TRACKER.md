@@ -4,9 +4,9 @@
 
 ## Gotcha
 
-**Overall progress:** 65% (28/43 subtasks)
-**Last updated:** October 3, 2026
-**Status:** Active — live at https://gotcha-chrisoc.vercel.app with the real OpenAI pipeline. Waiting on Clerk sign-in and a check on a real phone
+**Overall progress:** 70% (40/57 subtasks)
+**Last updated:** October 4, 2026
+**Status:** Active — third redesign ("Field Expedition") and the multi-animal catch built and checked locally, not yet deployed. The live site at https://gotcha-chrisoc.vercel.app still runs the previous look, and the multi-animal catch needs the Worker deployed too. Waiting on Clerk sign-in and a check on a real phone
 
 The overall count now adds up the checklists below (Step Zero and Phases 1 to 3). Earlier percentages used a looser count of 40.
 
@@ -42,7 +42,7 @@ The overall count now adds up the checklists below (Step Zero and Phases 1 to 3)
 
 ### Phase 1 — MVP
 
-**Phase progress:** 90% (27/30)
+**Phase progress:** 89% (39/44)
 **Goal:** Snap, reveal, collect. Does not start until Step Zero holds up.
 **Note:** The whole loop now runs for real, on the live site and locally: photo, GPT-4o vision check, rarity roll, gpt-image-1 painting, card saved to D1 and R2. Ticked items were checked in a real browser or through the API. What is left is Clerk sign-in, a photo with a person in frame, and a phone check.
 
@@ -105,6 +105,35 @@ The overall count now adds up the checklists below (Step Zero and Phases 1 to 3)
 - [x] Monthly spending limit set on the OpenAI account ($15)
 - [x] Developer routes (reset cap, clear samples, paint sample) refused on the live server
 
+#### Feature 1.8 — Game Layer
+**Progress:** 86% (6/7)
+**Goal:** The Pokemon GO habit loop, grown up: a reason to say "gotcha" again tomorrow. Everything here is worked out on the device from the cards, costs nothing, and changes no locked rule (see GOTCHA_DESIGN.md, Progression).
+
+- [x] GOTCHA moment: the photo snaps to color, GOTCHA stamps in with a burst and a jingle, and the species is named
+- [x] Rewards tally after every reveal: XP lines, total, XP bar, level up, new badges
+- [x] XP, levels 1 to 50 and ranks (Rookie to Legend), shown in the top bar and on every catch
+- [x] Explorer page: level ring, editable name, badges, field tasks and stamps, animal classes, luck against the odds, a journal of every day out catching
+- [x] 16 badges as enamel pins, bronze to platinum, and three field tasks a day with a daily stamp
+- [x] Species journal in Collection, numbered in the order found, grouped by animal class
+- [ ] Tune XP values, the level curve and badge goals after a week of real play
+
+#### Feature 1.9 — Several Animals in One Photo
+**Progress:** 75% (3/4)
+**Goal:** A photo of two dogs catches two dogs, one card each, like a ball catching one creature (Chris, Oct 4, 2026).
+
+- [x] The vision check lists every animal or animal statue in the photo (up to 3, most prominent first), and each is painted alone with its own rarity and stats
+- [x] Each animal uses one of the day's catches, so the most spent on paintings in a day doesn't change; extra animals with no catches left are mentioned instead of painted
+- [x] GOTCHA ×2, cards revealed one by one ("Animal 1 of 2", Next animal), combined rewards with "Caught together" XP, the Pack Leader badge, and "caught with" links on each card
+- [ ] Try it with a real photo of two animals (costs about two paintings)
+
+#### Feature 1.10 — Feels Like an App
+**Progress:** 100% (3/3)
+**Goal:** Cleaner and more organized, less on screen at once (Chris, Oct 4, 2026).
+
+- [x] Floating top and bottom bars, fixed in place, that slide away while scrolling down and come back on any scroll up, never covering content
+- [x] Settings rebuilt like a phone's settings app: a profile card, grouped rows with icon tiles, short pages for How to play, Rarity and odds, Levels and badges, Privacy and safety
+- [x] Calmer screens: Explorer in three tabs, one Today panel on the camera, one filter row in Collection, a one-line safety note, plain labels instead of monospace ones
+
 ---
 
 ### Phase 2 — Polish
@@ -139,6 +168,8 @@ The overall count now adds up the checklists below (Step Zero and Phases 1 to 3)
 | Oct 3, 2026 | Second redesign after feedback (too dark, cards generic). Brighter nature look, real trading-card layout with animal classes and full-art Epic and Legendary cards, full-width computer layout, Settings page for the OpenAI key, one-click repaint of sample cards | 38% |
 | Oct 3, 2026 | Went online. Worker, D1 and R2 on Cloudflare, OpenAI key as a Worker secret, app on Vercel with /api forwarded to the Worker, $15 monthly OpenAI limit, developer routes refused on the live server. Real catches checked end to end, and a no-animal photo is rejected without using a catch. Phase 1 pipeline items ticked. Counts now follow the checklists (43 subtasks) | 65% |
 | Oct 3, 2026 | Live card polish. The reveal card now floats, leans toward the mouse or a dragging finger, tilts with the phone, gets a jolt when it lands, and has art depth, a moving shadow and drifting specks. The card-in-hand view shares the same motion code (app/src/lib/motion.ts) | 65% |
+| Oct 4, 2026 | Third redesign, "Field Expedition": an adult take on Pokemon GO. GOTCHA moment and rewards tally on every catch, Explorer page (levels, badges, field tasks, journal), species journal in Collection, new navigation (raised Catch button on phones, level chip on computers), full-screen camera on phones, class marks and catch dates on cards, a new card back, a welcome screen with real sample cards, dark theme checked screen by screen. Fixed a bug where the shutter stayed off after "Keep catching" | 68% |
+| Oct 4, 2026 | Feedback round: floating bars that step aside while scrolling, Settings rebuilt like a phone's settings app with short pages, Explorer in tabs, calmer home and Collection. One photo of several animals now catches each one (up to 3, one card and one catch each), with GOTCHA ×2, a one-by-one reveal, "Caught together" XP and the Pack Leader badge | 70% |
 
 ---
 
@@ -158,14 +189,17 @@ Still missing:
 - [ ] Decide what testers do with feedback (a form or an email address for the Report a problem button)
 - [x] Spending cap on the OpenAI account ($15 a month). Done Oct 3, 2026
 - [ ] Safety check on photos (inappropriate images) before the AI sees them
-- [ ] Verify the dark theme screen by screen (built, but not yet checked in a browser)
+- [x] Verify the dark theme screen by screen. Done Oct 4, 2026 (Catch, Collection, Species, Explorer, card detail, Settings, Customize, computer and phone)
 
 ## What to Tackle Next
 
+- [ ] Look over the Field Expedition redesign at localhost:3000 (Catch, Collection and its Species view, Explorer, a catch from start to rewards) and decide what to keep
+- [ ] Deploy the redesign to Vercel once it looks right, and deploy the Worker for the multi-animal catch (no database change needed)
+- [ ] Try one real photo with two animals in it
 - [ ] Open https://gotcha-chrisoc.vercel.app on a phone, tilt a freshly caught card, and report whether the tilt feels right or inverted
 - [ ] Pick the 5 Step Zero test subjects and run them through the Upload photo button
 - [ ] Add Clerk sign-in so friends stop sharing one test account
-- [ ] Decide whether to keep the engagement hooks added in the redesign (see GOTCHA_OPEN_QUESTIONS.md)
+- [ ] Settle XP values, badge names and goals, and whether progress should move to the server with sign-in (see GOTCHA_OPEN_QUESTIONS.md)
 - [ ] Check name availability (App Store, Google Play, domain)
 
 ---

@@ -70,6 +70,10 @@ export const canTiltWithPhone = () =>
 
 export const canVibrate = () => typeof navigator !== "undefined" && "vibrate" in navigator;
 
+// The name on the Explorer page. Kept on this device until sign-in exists.
+export const getExplorerName = () => read("gotcha.explorer")?.trim() ?? "";
+export const setExplorerName = (name: string) => write("gotcha.explorer", name.trim().slice(0, 24));
+
 export const hasSeenWelcome = () => read(KEYS.welcomed) === "yes";
 export const markWelcomeSeen = () => write(KEYS.welcomed, "yes");
 

@@ -1,86 +1,99 @@
-﻿import type { Status } from "../lib/api";
+import type { Progress } from "../lib/progress";
+import { LevelBadge, XpBar } from "./game";
+import { IconCollection, IconExplorer, IconSettings } from "./glyphs";
 import Logo from "./Logo";
-import { Meter } from "./ui";
 
-export type Screen = "camera" | "collection" | "settings" | "customize";
+export type Screen = "camera" | "collection" | "explorer" | "settings" | "customize";
 
 const NAV: { id: Screen; href: string; label: string }[] = [
   { id: "camera", href: "#/", label: "Catch" },
   { id: "collection", href: "#/collection", label: "Collection" },
+  { id: "explorer", href: "#/explorer", label: "Explorer" },
 ];
 
-function TodayPill({ status, compact = false }: { status: Status; compact?: boolean }) {
-  return (
-    <div
-      className="inline-flex h-10 items-center gap-3 rounded-full border border-line bg-paper px-4 shadow-soft"
-      title={`${status.left} of ${status.cap} catches left today`}
-    >
-      <span className="text-[13.5px] font-semibold tabular">
-        {status.left}
-        <span className="font-medium text-ink-3"> {compact ? "left" : `of ${status.cap} left`}</span>
-      </span>
-      {!compact && <Meter left={status.left} cap={status.cap} variant="dots" />}
-    </div>
-  );
-}
+/*
+  Floating bars: fixed in place, glass over the page, out of the way while you scroll down.
+  Pages leave room for them (see .page), so they never sit on top of content at rest.
+*/
 
-export function TopNav({ screen, status }: { screen: Screen; status: Status | null }) {
+export function TopNav({ screen, progress, hidden }: { screen: Screen; progress: Progress | null; hidden: boolean }) {
   return (
-    <header className="sticky top-0 z-30 hidden border-b border-line bg-sand/80 backdrop-blur-xl lg:block">
-      <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-8 px-10">
-        <a href="#/" aria-label="Gotcha home" className="shrink-0">
-          <Logo className="text-[27px]" />
-        </a>
-        <nav className="flex items-center gap-1">
-          {NAV.map((n) => (
-            <a key={n.id} href={n.href} className="nav-link" aria-current={screen === n.id ? "page" : undefined}>
-              {n.label}
-            </a>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-2.5">
-          
-          {status && status.streak >= 2 && (
-            <span className="inline-flex h-10 items-center rounded-full border border-line bg-paper px-4 text-[13.5px] font-semibold shadow-soft">
-              {status.streak} day streak
-            </span>
-          )}
-          {status && <TodayPill status={status} />}
-          <a href="#/settings" className="nav-link" aria-current={screen === "settings" ? "page" : undefined}>
-            Settings
-          </a>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-export function MobileTopBar({ status }: { status: Status | null }) {
-  return (
-    <header className="pt-safe sticky top-0 z-30 border-b border-line bg-sand/85 backdrop-blur-xl lg:hidden">
-      <div className="flex h-14 items-center justify-between px-4">
-        <a href="#/" aria-label="Gotcha home">
-          <Logo className="text-[25px]" />
-        </a>
-        {status && <TodayPill status={status} compact />}
-      </div>
-    </header>
-  );
-}
-
-export function TabBar({ screen }: { screen: Screen }) {
-  const tabs = [...NAV, { id: "settings" as Screen, href: "#/settings", label: "Settings" }];
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-      <div className="mx-auto flex max-w-[560px]">
-        {tabs.map((t) => (
-          <a key={t.id} href={t.href} className="tab-link" aria-current={screen === t.id ? "page" : undefined}>
-            {t.label}
+    <header className={`floatbar floatbar--top ${hidden ? "is-hidden" : ""}`}>
+      <a href="#/" aria-label="Gotcha home" className="shrink-0">
+        <Logo className="text-[26px]" />
+      </a>
+      <nav className="flex items-center gap-1">
+        {NAV.map((n) => (
+          <a key={n.id} href={n.href} className="nav-link" aria-current={screen === n.id ? "page" : undefined}>
+            {n.label}
           </a>
         ))}
+      </nav>
+      <div className="ml-auto flex items-center gap-1.5">
+        {progress && (
+          <a
+            href="#/explorer"
+            className="explorer-chip"
+            aria-label={`Explorer level ${progress.level}, ${progress.rank}`}
+            aria-current={screen === "explorer" ? "page" : undefined}
+          >
+            <LevelBadge level={progress.level} ratio={progress.ratio} size={36} />
+            <span className="flex w-[86px] flex-col gap-1.5">
+              <span className="text-[13px] leading-none font-bold">{progress.rank}</span>
+              <XpBar ratio={progress.ratio} className="!h-[5px]" />
+            </span>
+          </a>
+        )}
+        <a
+          href="#/settings"
+          className="icon-link"
+          aria-label="Settings"
+          title="Settings"
+          aria-current={screen === "settings" || screen === "customize" ? "page" : undefined}
+        >
+          <IconSettings size={20} />
+        </a>
       </div>
+    </header>
+  );
+}
+
+// Phones: on every screen except the camera, which draws its own controls.
+export function MobileTopBar({ progress, hidden }: { progress: Progress | null; hidden: boolean }) {
+  return (
+    <header className={`floatbar floatbar--mtop ${hidden ? "is-hidden" : ""}`}>
+      <a href="#/" aria-label="Gotcha home" className="mr-auto">
+        <Logo className="text-[23px]" />
+      </a>
+      {progress && (
+        <a href="#/explorer" aria-label={`Explorer level ${progress.level}`} className="rounded-full">
+          <LevelBadge level={progress.level} ratio={progress.ratio} size={34} />
+        </a>
+      )}
+      <a href="#/settings" className="icon-link" aria-label="Settings">
+        <IconSettings size={20} />
+      </a>
+    </header>
+  );
+}
+
+export function TabBar({ screen, hidden }: { screen: Screen; hidden: boolean }) {
+  return (
+    <nav className={`tabbar ${hidden ? "is-hidden" : ""}`} aria-label="Main">
+      <a href="#/collection" className="tab-link" aria-current={screen === "collection" ? "page" : undefined}>
+        <IconCollection size={22} />
+        Collection
+      </a>
+      <a href="#/" className="tab-catch" aria-label="Catch">
+        <span className="shutter shutter--tab" aria-hidden>
+          <span className="shutter__ring" />
+          <span className="shutter__core" />
+        </span>
+      </a>
+      <a href="#/explorer" className="tab-link" aria-current={screen === "explorer" ? "page" : undefined}>
+        <IconExplorer size={22} />
+        Explorer
+      </a>
     </nav>
   );
 }
-
-

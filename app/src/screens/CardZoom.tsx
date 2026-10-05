@@ -5,7 +5,7 @@ import { prefersReducedMotion } from "../lib/hooks";
 import { applyPose, askMotionPermission, channel, clamp, idleDrift, MAX_X, MAX_Y, spring, useGyro } from "../lib/motion";
 import { haptic, sfx } from "../lib/sfx";
 import { CardFront, CardStats } from "../components/GameCard";
-import { IconClose } from "../components/icons";
+import { IconClose, IconNext, IconPrev } from "../components/glyphs";
 import { IconButton } from "../components/ui";
 
 /*
@@ -226,11 +226,11 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
       onClick={(e) => e.stopPropagation()}
     >
       <div data-nodrag className="absolute top-3 right-3 left-4 flex items-center justify-between">
-        <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-[12px] tracking-[0.08em] text-white/80 tabular-nums">
+        <span className="rounded-full bg-white/10 px-3 py-1 text-[12.5px] font-semibold text-white/80 tabular-nums">
           {index >= 0 ? `${index + 1} of ${total}` : ""}
         </span>
         <IconButton label="Close" onClick={onClose} className="text-white hover:bg-white/10 hover:text-white">
-          <IconClose />
+          <IconClose size={22} strokeWidth={1.8} />
         </IconButton>
       </div>
 
@@ -259,6 +259,7 @@ export default function CardZoom({ card, prev, next, index, total, onMove, onClo
 }
 
 function ArrowButton({ side, disabled, onClick }: { side: "left" | "right"; disabled: boolean; onClick: () => void }) {
+  const Icon = side === "left" ? IconPrev : IconNext;
   return (
     <button
       data-nodrag
@@ -269,9 +270,7 @@ function ArrowButton({ side, disabled, onClick }: { side: "left" | "right"; disa
         side === "left" ? "left-5" : "right-5"
       }`}
     >
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d={side === "left" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} />
-      </svg>
+      <Icon size={22} />
     </button>
   );
 }

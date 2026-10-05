@@ -13,11 +13,10 @@ export interface Facts {
   trait_notes: Record<string, string>;
 }
 
-export interface Vision {
-  facts: Facts;
-  verdict: "animal" | "statue" | "rejected";
-  rejection_reason: string;
-  people_present: boolean;
+// One animal found in the photo. A photo can hold several, and each becomes its own card.
+export interface Find {
+  kind: "animal" | "statue";
+  position: string;
   animal_class: string;
   species: string;
   name: string;
@@ -25,7 +24,21 @@ export interface Vision {
   card_description: string;
   traits: Record<string, number>;
   special: { name: string; description: string };
+  facts: Facts;
 }
+
+export interface Vision {
+  verdict: "found" | "rejected";
+  rejection_reason: string;
+  people_present: boolean;
+  animals: Find[];
+}
+
+// The most animals turned into cards from one photo. Each one uses one of the day's catches.
+export const MAX_PER_PHOTO = 3;
+
+// What painting needs to know about an animal.
+export type Subject = Pick<Find, "kind" | "species" | "visual_description" | "position">;
 
 export interface AiEnv {
   OPENAI_API_KEY?: string;
@@ -39,21 +52,24 @@ const imageQuality = (env: AiEnv) => (["low", "medium", "high"].includes(env.IMA
 
 export type ArtMode = "reference" | "text";
 
-export const VISION_PROMPT = `You are the catch judge for Gotcha, a collectible card game where a live photo of a real animal becomes a card.
+export const VISION_PROMPT = `You are the catch judge for Gotcha, a collectible card game where a live photo of real animals becomes cards: one card for each animal, like catching each one.
 
-1. Decide the verdict.
-- "animal": a real, living animal is clearly visible. Any kind counts: mammal, bird, reptile, amphibian, fish, insect, spider, and so on.
-- "statue": a statue or sculpture of an animal (stone, bronze, wood, metal). Plush toys, cartoons, screens and printed pictures are not statues.
-- "rejected": no animal or animal statue is clearly visible. Write a short, friendly rejection_reason (one sentence, encouraging, no blame). Fill the other fields with empty strings, "other" and 1s.
-If several animals are visible, pick the most prominent one.
+1. Find the animals.
+- List every real, living animal and every statue or sculpture of an animal (stone, bronze, wood, metal) that is clearly visible, the most prominent first. Any kind counts: mammal, bird, reptile, amphibian, fish, insect, spider, and so on.
+- List at most ${MAX_PER_PHOTO}. If more are visible, list the ${MAX_PER_PHOTO} most prominent.
+- Only list an animal that is clear enough to paint on its own. A tiny blur in the far background does not count.
+- Plush toys, cartoons, screens and printed pictures do not count.
+- verdict is "found" when you list at least one animal. Otherwise verdict is "rejected", animals is an empty list, and rejection_reason is one short, friendly sentence (encouraging, no blame).
+- For each animal, kind is "animal" or "statue", and position says where it is in the photo in a few words (for example "on the left", "in front", "the larger one on the right"), so it can be painted on its own. Use an empty string when it is the only one.
+Everything below is for each animal you list.
 
 2. Class. animal_class is one of: mammal, bird, reptile, amphibian, fish, insect, arachnid, other. For a statue, use the class of the animal it depicts.
 
-3. People. Set people_present if any person or body part is visible. People must never appear on the card, so leave them out of every description. Describe the animal as if it were alone.
+3. People. Set people_present if any person or body part is visible. People must never appear on a card, so leave them out of every description.
 
-4. Describe for likeness. visual_description is used to paint an illustration that the owner must recognize as their animal. Be specific: breed or species, body shape and size, coat, feather or scale colors, exact markings and where they are, eye color, ear shape, tail, distinctive features, pose. For a statue, describe the material and the sculpted animal. 60 to 120 words. No people, no background clutter.
+4. Describe for likeness. visual_description is used to paint an illustration of this one animal that the owner must recognize. Describe only this animal, as if it were alone. Be specific: breed or species, body shape and size, coat, feather or scale colors, exact markings and where they are, eye color, ear shape, tail, distinctive features, pose. For a statue, describe the material and the sculpted animal. 60 to 120 words. No people, no other animals, no background clutter.
 
-5. Name. A short, friendly card name that is easy to say out loud, inspired by how this animal looks (for example "Biscuit Bolt" or "Sir Hops"). Two words at most.
+5. Name. A short, friendly card name that is easy to say out loud, inspired by how this animal looks (for example "Biscuit Bolt" or "Sir Hops"). Two words at most. Animals in the same photo get different names.
 
 6. card_description: one playful sentence of flavor text, under 20 words.
 
@@ -81,59 +97,47 @@ For a statue, score the animal it depicts.
 - fun_facts: exactly 3 surprising, accurate facts, each one sentence.
 - trait_notes: for each of power, speed, defense, agility, senses, one short sentence of real-world evidence for the score you gave. Where you can, include a real number (for example a top speed). The notes should make the game score feel earned.`;
 
-const VISION_SCHEMA = {
+const FACTS_SCHEMA = {
   type: "object",
   additionalProperties: false,
   required: [
-    "verdict",
-    "rejection_reason",
-    "people_present",
-    "animal_class",
-    "species",
-    "name",
-    "visual_description",
-    "card_description",
-    "traits",
-    "special",
-    "facts",
+    "common_name",
+    "scientific_name",
+    "variety",
+    "habitat",
+    "diet",
+    "lifespan",
+    "size",
+    "conservation_status",
+    "fun_facts",
+    "trait_notes",
   ],
   properties: {
-    facts: {
+    common_name: { type: "string" },
+    scientific_name: { type: "string" },
+    variety: { type: "string" },
+    habitat: { type: "string" },
+    diet: { type: "string" },
+    lifespan: { type: "string" },
+    size: { type: "string" },
+    conservation_status: { type: "string" },
+    fun_facts: { type: "array", items: { type: "string" } },
+    trait_notes: {
       type: "object",
       additionalProperties: false,
-      required: [
-        "common_name",
-        "scientific_name",
-        "variety",
-        "habitat",
-        "diet",
-        "lifespan",
-        "size",
-        "conservation_status",
-        "fun_facts",
-        "trait_notes",
-      ],
-      properties: {
-        common_name: { type: "string" },
-        scientific_name: { type: "string" },
-        variety: { type: "string" },
-        habitat: { type: "string" },
-        diet: { type: "string" },
-        lifespan: { type: "string" },
-        size: { type: "string" },
-        conservation_status: { type: "string" },
-        fun_facts: { type: "array", items: { type: "string" } },
-        trait_notes: {
-          type: "object",
-          additionalProperties: false,
-          required: [...TRAIT_KEYS],
-          properties: Object.fromEntries(TRAIT_KEYS.map((k) => [k, { type: "string" }])),
-        },
-      },
+      required: [...TRAIT_KEYS],
+      properties: Object.fromEntries(TRAIT_KEYS.map((k) => [k, { type: "string" }])),
     },
-    verdict: { type: "string", enum: ["animal", "statue", "rejected"] },
-    rejection_reason: { type: "string" },
-    people_present: { type: "boolean" },
+  },
+};
+
+const FIND_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["kind", "position", "animal_class", "species", "name", "visual_description", "card_description", "traits", "special", "facts"],
+  properties: {
+    kind: { type: "string", enum: ["animal", "statue"] },
+    position: { type: "string" },
     animal_class: { type: "string", enum: [...ANIMAL_CLASSES] },
     species: { type: "string" },
     name: { type: "string" },
@@ -151,6 +155,19 @@ const VISION_SCHEMA = {
       required: ["name", "description"],
       properties: { name: { type: "string" }, description: { type: "string" } },
     },
+    facts: FACTS_SCHEMA,
+  },
+};
+
+const VISION_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["verdict", "rejection_reason", "people_present", "animals"],
+  properties: {
+    verdict: { type: "string", enum: ["found", "rejected"] },
+    rejection_reason: { type: "string" },
+    people_present: { type: "boolean" },
+    animals: { type: "array", items: FIND_SCHEMA },
   },
 };
 
@@ -160,11 +177,14 @@ const COMPOSITION: Record<ArtLayout, string> = {
   full: "Composition: portrait orientation. The animal is the hero, centered in the upper two thirds and fully in frame, with no cropped ears, tails or legs. Keep the top eighth and the bottom third calm and slightly darker so card text can sit on them.",
 };
 
-export function artPrompt(v: Vision, mode: ArtMode, layout: ArtLayout): string {
+// `together` is how many animals were in the photo. With more than one, the painting keeps to this one.
+export function artPrompt(v: Subject, mode: ArtMode, layout: ArtLayout, together = 1): string {
   const subject =
-    v.verdict === "statue"
-      ? `a statue of a ${v.species}, shown as the sculpture itself with its real material and texture`
-      : `a ${v.species}`;
+    v.kind === "statue" ? `a statue of a ${v.species}, shown as the sculpture itself with its real material and texture` : `a ${v.species}`;
+  const focus =
+    together > 1 && mode === "reference"
+      ? `The reference photo shows ${together} animals. Paint only this one${v.position ? `, ${v.position}` : ""}, alone. Leave every other animal out.`
+      : "";
   const likeness =
     mode === "reference"
       ? "Use the reference photo for the animal only. Match its exact markings, colors, proportions and features so the owner instantly recognizes this individual animal."
@@ -172,11 +192,14 @@ export function artPrompt(v: Vision, mode: ArtMode, layout: ArtLayout): string {
   return [
     `Illustration for a collectible card: ${subject}.`,
     `Details: ${v.visual_description}`,
+    focus,
     likeness,
     "Style: painterly gouache illustration with confident brushwork and crisp edges, rich natural color, soft directional light with a gentle rim light, simple atmospheric background drawn from the animal's habitat.",
     COMPOSITION[layout],
     "Strictly no people, no human hands or body parts, no text, no letters, no borders, no card frame.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -228,7 +251,21 @@ export async function analyzePhoto(env: AiEnv, photo: Uint8Array, mime: string):
       ],
     }),
   });
-  return JSON.parse(body.choices[0].message.content) as Vision;
+  return tidy(JSON.parse(body.choices[0].message.content) as Vision);
+}
+
+// Holds the answer to the rules whatever comes back: at most MAX_PER_PHOTO animals, and "found" only with one.
+function tidy(v: Vision): Vision {
+  const animals = (v.animals ?? []).slice(0, MAX_PER_PHOTO);
+  if (v.verdict !== "found" || animals.length === 0) {
+    return {
+      ...v,
+      verdict: "rejected",
+      animals: [],
+      rejection_reason: v.rejection_reason || "No animal spotted this time. Try getting the whole critter in frame.",
+    };
+  }
+  return { ...v, animals };
 }
 
 export interface Art {
@@ -239,13 +276,14 @@ export interface Art {
 
 export async function illustrate(
   env: AiEnv,
-  v: Vision,
+  v: Subject,
   photo: Uint8Array,
   mime: string,
   mode: ArtMode,
   layout: ArtLayout,
+  together = 1,
 ): Promise<Art> {
-  const prompt = artPrompt(v, mode, layout);
+  const prompt = artPrompt(v, mode, layout, together);
   if (!env.OPENAI_API_KEY) {
     await sleep(900);
     return { bytes: new TextEncoder().encode(mockArt(v, layout)), mime: "image/svg+xml", prompt };
@@ -275,7 +313,7 @@ export async function illustrate(
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type MockCatch = Omit<Vision, "rejection_reason" | "people_present" | "facts">;
+type MockCatch = Omit<Find, "facts" | "position">;
 
 const mf = (
   common_name: string,
@@ -323,7 +361,7 @@ function factsFor(species: string): Facts {
 
 const MOCKS: MockCatch[] = [
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "mammal",
     species: "Golden Retriever",
     name: "Biscuit Bolt",
@@ -333,7 +371,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Super Sniff", description: "Tracks a scent trail hours after it was laid." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "insect",
     species: "Honey Bee",
     name: "Buzz Bloom",
@@ -343,7 +381,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Sting", description: "A barbed sting that warns the whole hive." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "bird",
     species: "American Robin",
     name: "Red Ruffle",
@@ -353,7 +391,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Worm Radar", description: "Hears worms moving under the soil." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "mammal",
     species: "Tabby Cat",
     name: "Marble Paws",
@@ -363,7 +401,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Night Eyes", description: "Sees in light six times dimmer than people need." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "mammal",
     species: "Eastern Gray Squirrel",
     name: "Nutmeg Dash",
@@ -373,7 +411,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Tree Sprint", description: "Runs headfirst down trunks by turning its ankles around." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "bird",
     species: "Mallard",
     name: "Sir Splash",
@@ -383,7 +421,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Waterproof", description: "Oils its feathers so water rolls right off." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "arachnid",
     species: "Cross Orbweaver",
     name: "Silk Knot",
@@ -393,7 +431,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Venom", description: "A quick bite that stills its prey in seconds." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "insect",
     species: "Monarch Butterfly",
     name: "Ember Wing",
@@ -403,7 +441,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Bad Taste", description: "Milkweed in its body makes predators sick." },
   },
   {
-    verdict: "animal",
+    kind: "animal",
     animal_class: "reptile",
     species: "Green Anole",
     name: "Lime Flick",
@@ -413,7 +451,7 @@ const MOCKS: MockCatch[] = [
     special: { name: "Color Shift", description: "Turns from green to brown to blend in." },
   },
   {
-    verdict: "statue",
+    kind: "statue",
     animal_class: "mammal",
     species: "Lion",
     name: "Brass Mane",
@@ -436,17 +474,28 @@ const MOCK_REJECTIONS = [
 
 const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
 
+// Mostly one animal, sometimes two (so the multi-animal catch can be tried without a key), sometimes none.
 async function mockVision(): Promise<Vision> {
   await sleep(1200);
-  const base = pick(MOCKS);
-  if (Math.random() < 0.15) {
-    return { ...base, facts: factsFor(base.species), verdict: "rejected", rejection_reason: pick(MOCK_REJECTIONS), people_present: false };
-  }
-  return { ...base, facts: factsFor(base.species), rejection_reason: "", people_present: false };
+  const roll = Math.random();
+  if (roll < 0.12) return { verdict: "rejected", rejection_reason: pick(MOCK_REJECTIONS), people_present: false, animals: [] };
+  const first = pick(MOCKS);
+  const second = pick(MOCKS.filter((m) => m !== first));
+  const found = roll < 0.3 ? [first, second] : [first];
+  return {
+    verdict: "found",
+    rejection_reason: "",
+    people_present: false,
+    animals: found.map((m, i) => ({
+      ...m,
+      facts: factsFor(m.species),
+      position: found.length > 1 ? (i === 0 ? "on the left" : "on the right") : "",
+    })),
+  };
 }
 
 // Placeholder art: a dusk landscape with the species initial, so mock cards still look like cards.
-function mockArt(v: Vision, layout: ArtLayout): string {
+function mockArt(v: Subject, layout: ArtLayout): string {
   const seed = [...v.species].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
   const hue = seed % 360;
   const warm = (hue + 28) % 360;

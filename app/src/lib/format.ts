@@ -10,6 +10,13 @@ export function countdown(toIso: string, now = Date.now()): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+// "Oct 4", or "Oct 4, 2025" when it isn't this year.
+export function formatDay(iso: string): string {
+  const d = new Date(iso);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+}
+
 export const formatCaught = (iso: string) =>
   new Date(iso).toLocaleString(undefined, {
     month: "short",

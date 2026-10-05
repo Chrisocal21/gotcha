@@ -67,7 +67,7 @@ export function Chip({ children, tone = "default", className = "" }: { children:
 }
 
 export function Label({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ink-3 ${className}`}>{children}</div>;
+  return <div className={`text-[12.5px] font-semibold text-ink-3 ${className}`}>{children}</div>;
 }
 
 export function Segmented<T extends string>({

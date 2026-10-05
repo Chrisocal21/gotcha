@@ -1,14 +1,39 @@
-import { useRef, type PointerEvent } from "react";
+import { useRef, type CSSProperties, type PointerEvent } from "react";
 import { scoreOf, TRAIT_KEYS, type Card, type TraitKey } from "../lib/api";
 import { classClass, classLabel } from "../lib/classes";
 import { pad3 } from "../lib/format";
+import { classKeyOf } from "../lib/progress";
 import { BOOST, ODDS, tierClass, tierRank } from "../lib/tiers";
+import { ClassGlyph } from "./glyphs";
 import Logo from "./Logo";
 
 export type CardFace = Pick<
   Card,
-  "number" | "name" | "species" | "isStatue" | "isSample" | "animalClass" | "rarity" | "stats" | "artUrl" | "special" | "description"
+  | "number"
+  | "name"
+  | "species"
+  | "isStatue"
+  | "isSample"
+  | "animalClass"
+  | "rarity"
+  | "stats"
+  | "artUrl"
+  | "special"
+  | "description"
+  | "createdAt"
 >;
+
+// Printed on the card, so it reads as a keepsake of the day it was caught.
+const caughtOn = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+function ClassPill({ card }: { card: CardFace }) {
+  return (
+    <span className="gcard__class">
+      <ClassGlyph cls={classKeyOf(card)} strokeWidth={2.6} />
+      {classLabel(card.animalClass, card.isStatue)}
+    </span>
+  );
+}
 
 const SHORT: Record<TraitKey, string> = { power: "PWR", speed: "SPD", defense: "DEF", agility: "AGI", senses: "SNS" };
 
@@ -39,6 +64,7 @@ export function CardFront({
   const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const rank = tierRank(card.rarity);
   const fullArt = rank >= 3;
+  const top = TRAIT_KEYS.reduce((a, b) => (card.stats[b] > card.stats[a] ? b : a));
 
   function move(e: PointerEvent<HTMLDivElement>) {
     const el = ref.current;
@@ -102,7 +128,7 @@ export function CardFront({
             </div>
           </div>
           <div className="gcard__sub">
-            <span className="gcard__class">{classLabel(card.animalClass, card.isStatue)}</span>
+            <ClassPill card={card} />
             <span className="gcard__species">{card.species}</span>
           </div>
 
@@ -122,7 +148,7 @@ export function CardFront({
           </div>
           <div className="gcard__stats">
             {TRAIT_KEYS.map((k) => (
-              <div key={k} className="gcard__stat">
+              <div key={k} className={`gcard__stat ${k === top ? "is-top" : ""}`}>
                 <b>{card.stats[k]}</b>
                 <span>{SHORT[k]}</span>
               </div>
@@ -130,8 +156,10 @@ export function CardFront({
           </div>
           <div className="gcard__flavor">{card.description}</div>
           <div className="gcard__foot">
-            <span>No. {pad3(card.number)}</span>
-            <span>{card.isSample ? "Sample card" : "Gotcha series one"}</span>
+            <span>
+              No. {pad3(card.number)} · {caughtOn(card.createdAt)}
+            </span>
+            <span>{card.isSample ? "Sample card" : "Series one"}</span>
           </div>
 
           <div className="gcard__glare" />
@@ -200,7 +228,7 @@ export function CardStats({ card, className = "" }: { card: Card; className?: st
 
             <div className="gcard__foot">
               <span>No. {pad3(card.number)}</span>
-              <span>{classLabel(card.animalClass, card.isStatue)}</span>
+              <ClassPill card={card} />
             </div>
           </div>
           <div className="gcard__glare" />
@@ -210,15 +238,32 @@ export function CardStats({ card, className = "" }: { card: Card; className?: st
   );
 }
 
+// The back of every card: the catch button's spectrum ring and sun core, on your chosen card-back color.
 export function CardBack({ className = "" }: { className?: string }) {
   return (
     <div className={`card-box ${className}`}>
       <div className="gback">
         <div className="gback__inner">
-          <div className="gback__ring" />
+          <div className="gback__ring">
+            <span className="gback__core" />
+          </div>
           <Logo />
+          <span className="gback__series">Series one</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Three sample cards fanned out, for first-run screens. --w sets the width of one card.
+export function CardFan({ cards, width = 180, className = "" }: { cards: CardFace[]; width?: number; className?: string }) {
+  return (
+    <div className={`fan ${className}`} style={{ "--w": `${width}px` } as CSSProperties} aria-hidden>
+      {cards.slice(0, 3).map((c, i) => (
+        <div key={c.name} className={`fan__card fan__card--${i}`}>
+          <CardFront card={c} size="thumb" />
+        </div>
+      ))}
     </div>
   );
 }

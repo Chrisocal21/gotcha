@@ -81,6 +81,37 @@ export function useSwipe(onLeft: () => void, onRight: () => void) {
   };
 }
 
+/*
+  The floating bars step aside while you scroll down through a page and come back on any scroll up,
+  near the top, or at the very end, like a native app. `key` resets them (pass the current screen).
+*/
+export function useAutoHide(key: string): boolean {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    setHidden(false);
+    let last = window.scrollY;
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const y = Math.max(0, window.scrollY);
+        const dy = y - last;
+        const atEnd = window.innerHeight + y >= document.documentElement.scrollHeight - 8;
+        if (y < 72 || atEnd) setHidden(false);
+        else if (dy > 8) setHidden(true);
+        else if (dy < -8) setHidden(false);
+        if (Math.abs(dy) > 8) last = y;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [key]);
+  return hidden;
+}
+
 export function useEscape(onEscape: () => void) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onEscape();
