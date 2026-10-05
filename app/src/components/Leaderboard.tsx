@@ -68,8 +68,11 @@ export default function Leaderboard() {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-paper-2 p-4">
           <div className="min-w-0">
             <div className="text-[12.5px] font-semibold text-ink-3">You appear as</div>
-            <div className="flex items-center gap-2 font-display text-[19px] font-bold">\n              <span className="truncate">{me.name}</span>\n              {me.creator && <CreatorTag />}
-              {me.founder && <FounderTag />}\n            </div>
+            <div className="flex items-center gap-2 font-display text-[19px] font-bold">
+              <span className="truncate">{me.name}</span>
+              {me.creator && <CreatorTag />}
+              {me.founder && <FounderTag />}
+            </div>
           </div>
           <div className="flex items-center gap-5 text-right">
             <Stat label="Rank" value={me.rank ? `#${fmt(me.rank)}` : "None yet"} />
