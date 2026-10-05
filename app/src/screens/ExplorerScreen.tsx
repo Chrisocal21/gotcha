@@ -93,15 +93,6 @@ function Hero({ p, streak, creator }: { p: Progress; streak: number; creator: bo
               <LevelBadge level={p.level} ratio={p.ratio} label className="hero__badge" />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-semibold text-white/75">
-                Level {p.level} · {p.rank}
-              </div>
-              {(creator || (p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0) && (
-                <div className="mt-1.5 flex flex-nowrap items-center gap-1.5">
-                  {creator && <CreatorTag />}
-                  {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
-                </div>
-              )}
             {editing ? (
               <input
                 autoFocus
@@ -119,11 +110,23 @@ function Hero({ p, streak, creator }: { p: Progress; streak: number; creator: bo
             ) : (
               <button onClick={() => setEditing(true)} className="group mt-0.5 flex max-w-full flex-col items-start text-left" title="Change your explorer name">
                 <h1 className="max-w-full truncate font-display text-[30px] leading-[1.08] font-extrabold tracking-tight sm:text-[42px]">{name || "Explorer"}</h1>
-                <span className="text-[12.5px] font-semibold text-white/60 underline-offset-4 group-hover:text-white group-hover:underline">
-                  {name ? "Edit name" : "Add your name"}
-                </span>
               </button>
             )}
+              {(creator || (p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0) && (
+                <div className="mt-1.5 flex flex-nowrap items-center gap-1.5">
+                  {creator && <CreatorTag />}
+                  {(p.medals.find((m) => m.def.id === "founder")?.value ?? 0) > 0 && <FounderTag />}
+                </div>
+              )}
+              <div className="mt-1.5 text-[13.5px] font-semibold text-white/75">
+                Level {p.level} · {p.rank}
+              </div>
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-1 text-[12.5px] font-semibold text-white/60 underline-offset-4 hover:text-white hover:underline"
+            >
+              {name ? "Edit name" : "Add your name"}
+            </button>
             </div>
           </div>
             <div className="mt-5 w-full lg:max-w-[460px]">
