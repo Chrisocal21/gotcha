@@ -3,20 +3,23 @@ import type { Status } from "../lib/api";
 import { countdown, plural } from "../lib/format";
 import { useNow } from "../lib/hooks";
 import { saveProfile } from "../lib/api";
+import { useTapCounter } from "../lib/eggs";
 import { CLERK_KEY } from "../components/AuthGate";
 import { getExplorerName, setExplorerName } from "../lib/prefs";
-import { CLASS_NAMES, CLASS_ORDER, MEDAL_TIERS, XP, type DayLog, type MedalState, type Progress } from "../lib/progress";
+import { CLASS_NAMES, CLASS_ORDER, isSecret, MEDAL_TIERS, nextRank, XP, type DayLog, type MedalDef, type MedalState, type Progress } from "../lib/progress";
 import { ODDS, TIERS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
 import { ClassEmblem, LevelBadge, MedalPin, SectionTitle, StampRow, TaskRow, XpBar, xpText } from "../components/game";
 import { Button, Panel, Segmented } from "../components/ui";
+import Leaderboard from "../components/Leaderboard";
 
-type Tab = "overview" | "badges" | "journal";
+type Tab = "overview" | "badges" | "journal" | "board";
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "overview", label: "Overview" },
   { value: "badges", label: "Badges" },
   { value: "journal", label: "Journal" },
+  { value: "board", label: "Leaderboard" },
 ];
 
 // Remembered for the session, so coming back from a card keeps your tab.
@@ -55,6 +58,7 @@ export default function ExplorerScreen({
         <div className="fade-in mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2 lg:items-start">
           <FieldTasks p={progress} status={status} />
           <div className="min-w-0 space-y-5">
+            <RoadAhead p={progress} />
             <NextBadges p={progress} onSeeAll={() => setTab("badges")} />
             <ClassStrip p={progress} />
             <RarityMix p={progress} />
@@ -63,6 +67,7 @@ export default function ExplorerScreen({
       )}
       {tab === "badges" && <Badges p={progress} />}
       {tab === "journal" && <Journal days={progress.days} onOpenCard={onOpenCard} />}
+      {tab === "board" && <Leaderboard />}
     </div>
   );
 }
@@ -70,6 +75,7 @@ export default function ExplorerScreen({
 function Hero({ p, streak }: { p: Progress; streak: number }) {
   const [name, setName] = useState(getExplorerName);
   const [editing, setEditing] = useState(false);
+  const tapLevel = useTapCounter("e-level", 10);
 
   function save(value: string) {
     setExplorerName(value);
@@ -83,7 +89,9 @@ function Hero({ p, streak }: { p: Progress; streak: number }) {
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 lg:flex-1">
           <div className="flex items-center gap-4 lg:gap-6">
-            <LevelBadge level={p.level} ratio={p.ratio} label className="hero__badge" />
+            <span onClick={tapLevel}>
+              <LevelBadge level={p.level} ratio={p.ratio} label className="hero__badge" />
+            </span>
             <div className="min-w-0 flex-1">
               <div className="text-[13.5px] font-semibold text-white/75">
                 Level {p.level} · {p.rank}
@@ -178,10 +186,36 @@ function FieldTasks({ p, status }: { p: Progress; status: Status | null }) {
   );
 }
 
+// The long view: every step still ahead, so the road never seems to end.
+function RoadAhead({ p }: { p: Progress }) {
+  const steps = p.medals.reduce((s, m) => s + m.def.goals.length, 0);
+  const done = p.medals.reduce((s, m) => s + (m.def.secret ? Number(m.tier > 0) : Math.min(m.tier, m.def.goals.length)), 0);
+  const mystery = p.medals.filter(isSecret);
+  const rank = nextRank(p.level);
+  const rows: [string, string][] = [
+    ["Badge steps", `${done.toLocaleString("en-US")} of ${steps.toLocaleString("en-US")}`],
+    ["Mystery badges", `${mystery.filter((m) => m.tier > 0).length} of ${mystery.length} found`],
+    ["Next rank", rank ? `${rank[1]} at level ${rank[0]}` : "You made it to the top"],
+  ];
+  return (
+    <Panel className="p-5 sm:p-6">
+      <SectionTitle title="The road ahead" sub="There's always another step" />
+      <dl className="mt-3 divide-y divide-line">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-baseline justify-between gap-4 py-2.5 text-[14px]">
+            <dt className="text-ink-2">{k}</dt>
+            <dd className="font-bold tabular">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </Panel>
+  );
+}
+
 // The badges you're closest to reaching next, so there's always something in sight.
 function NextBadges({ p, onSeeAll }: { p: Progress; onSeeAll: () => void }) {
   const next = p.medals
-    .filter((m): m is MedalState & { goal: number } => m.goal != null)
+    .filter((m): m is MedalState & { goal: number } => m.goal != null && !isSecret(m))
     .map((m) => ({ m, ratio: (m.value - m.floor) / (m.goal - m.floor) }))
     .sort((a, b) => b.ratio - a.ratio || a.m.goal - a.m.value - (b.m.goal - b.m.value))
     .slice(0, 3);
@@ -268,13 +302,37 @@ function RarityMix({ p }: { p: Progress }) {
   );
 }
 
+type BadgeGroup = "all" | MedalDef["group"];
+
+const BADGE_GROUPS: { value: BadgeGroup; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "progress", label: "Milestones" },
+  { value: "habit", label: "Habits" },
+  { value: "class", label: "Animals" },
+  { value: "collection", label: "Collections" },
+  { value: "mystery", label: "Mystery" },
+];
+
 function Badges({ p }: { p: Progress }) {
+  const [group, setGroup] = useState<BadgeGroup>("all");
   const earned = p.medals.filter((m) => m.tier > 0).length;
+  const mystery = p.medals.filter(isSecret);
+  const found = mystery.filter((m) => m.tier > 0).length;
+  const shown = p.medals
+    .filter((m) => group === "all" || m.def.group === group)
+    // Earned first, then the ones you're closest to, with undiscovered mystery badges last.
+    .sort((a, b) => Number(isSecret(a) && a.tier === 0) - Number(isSecret(b) && b.tier === 0) || b.tier - a.tier || progressOf(b) - progressOf(a));
   return (
     <Panel className="fade-in mt-5 p-5 sm:p-6">
-      <SectionTitle title="Badges" sub={`${earned} of ${p.medals.length} earned. Each one goes bronze, silver, gold, then platinum.`} />
+      <SectionTitle
+        title="Badges"
+        sub={`${earned} of ${p.medals.length} earned. Most go bronze, silver, gold, platinum, diamond, then mythic. ${found} of ${mystery.length} mystery badges found.`}
+      />
+      <div className="no-scrollbar -mx-1 mt-4 overflow-x-auto px-1">
+        <Segmented size="sm" value={group} onChange={setGroup} options={BADGE_GROUPS} />
+      </div>
       <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-4">
-        {p.medals.map((m) => (
+        {shown.map((m) => (
           <MedalPin key={m.def.id} m={m} />
         ))}
       </div>
@@ -282,6 +340,7 @@ function Badges({ p }: { p: Progress }) {
   );
 }
 
+const progressOf = (m: MedalState) => (m.goal == null ? 1 : (m.value - m.floor) / (m.goal - m.floor));
 const dayLabel = (day: string) =>
   new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 

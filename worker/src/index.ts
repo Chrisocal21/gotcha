@@ -1,4 +1,5 @@
 import { authenticate, isDeveloper, type AuthEnv } from "./auth";
+import { joinBoard, leaveBoard, loadBoard } from "./board";
 import { analyzePhoto, illustrate, sampleDescription, type AiEnv, type ArtMode } from "./ai";
 import {
   applyBoost,
@@ -274,6 +275,19 @@ export default {
       if (path === "/api/profile") {
         if (req.method === "GET") return await handleGetProfile(env, user);
         if (req.method === "PUT") return await handlePutProfile(req, env, user);
+      }
+      if (path === "/api/leaderboard" && req.method === "GET") {
+        return json(await loadBoard(env.DB, user, url.searchParams.get("scope") === "week" ? "week" : "all"));
+      }
+      if (path === "/api/leaderboard/me") {
+        if (req.method === "PUT") {
+          const result = await joinBoard(env.DB, user, (await req.json().catch(() => null)) as { kind?: unknown; name?: unknown } | null);
+          return "error" in result ? json({ error: result.error }, result.status) : json({ name: result.name, kind: result.kind });
+        }
+        if (req.method === "DELETE") {
+          await leaveBoard(env.DB, user);
+          return json({ ok: true });
+        }
       }
       if (path === "/api/catch" && req.method === "POST") return await handleCatch(req, env, user);
       if (path === "/api/cards" && req.method === "GET") return await handleCollection(env, user);

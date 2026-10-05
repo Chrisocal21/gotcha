@@ -1,6 +1,7 @@
 import type { Progress } from "../lib/progress";
 import { LevelBadge, XpBar } from "./game";
 import { IconCollection, IconExplorer, IconSettings } from "./glyphs";
+import { useTapCounter } from "../lib/eggs";
 import Logo from "./Logo";
 
 export type Screen = "camera" | "collection" | "explorer" | "settings" | "customize";
@@ -17,9 +18,10 @@ const NAV: { id: Screen; href: string; label: string }[] = [
 */
 
 export function TopNav({ screen, progress, hidden }: { screen: Screen; progress: Progress | null; hidden: boolean }) {
+  const tap = useTapCounter("e-logo", 7);
   return (
     <header className={`floatbar floatbar--top ${hidden ? "is-hidden" : ""}`}>
-      <a href="#/" aria-label="Gotcha home" className="shrink-0">
+      <a href="#/" aria-label="Gotcha home" className="shrink-0" onClick={tap}>
         <Logo className="text-[26px]" />
       </a>
       <nav className="flex items-center gap-1">
@@ -60,9 +62,10 @@ export function TopNav({ screen, progress, hidden }: { screen: Screen; progress:
 
 // Phones: on every screen except the camera, which draws its own controls.
 export function MobileTopBar({ progress, hidden }: { progress: Progress | null; hidden: boolean }) {
+  const tap = useTapCounter("e-logo", 7);
   return (
     <header className={`floatbar floatbar--mtop ${hidden ? "is-hidden" : ""}`}>
-      <a href="#/" aria-label="Gotcha home" className="mr-auto">
+      <a href="#/" aria-label="Gotcha home" className="mr-auto" onClick={tap}>
         <Logo className="text-[23px]" />
       </a>
       {progress && (

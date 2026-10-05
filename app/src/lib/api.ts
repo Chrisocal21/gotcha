@@ -167,3 +167,44 @@ export async function saveProfile(profile: Profile): Promise<Profile> {
   if (!res.ok) throw new Error("Could not save your profile");
   return (await res.json()).profile;
 }
+
+// ---------- Leaderboard ----------
+
+export type BoardScope = "all" | "week";
+export type NameKind = "screen" | "real";
+
+export interface BoardEntry {
+  rank: number;
+  name: string;
+  kind: NameKind;
+  score: number;
+  cards: number;
+  species: number;
+  you: boolean;
+}
+
+export interface Board {
+  scope: BoardScope;
+  entries: BoardEntry[];
+  me: { name: string; kind: NameKind; rank: number | null; score: number; cards: number; species: number } | null;
+  total: number;
+}
+
+export const getBoard = (scope: BoardScope) => getJson<Board>(`/api/leaderboard?scope=${scope}`);
+
+// Resolves to null on success, or the reason the name was refused.
+export async function joinBoard(kind: NameKind, name: string): Promise<string | null> {
+  const res = await authFetch("/api/leaderboard/me", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind, name }),
+  });
+  if (res.ok) return null;
+  const body = await res.json().catch(() => null);
+  return body?.error ?? "Could not save that name";
+}
+
+export async function leaveBoard(): Promise<void> {
+  const res = await authFetch("/api/leaderboard/me", { method: "DELETE" });
+  if (!res.ok) throw new Error("Could not leave the leaderboard");
+}

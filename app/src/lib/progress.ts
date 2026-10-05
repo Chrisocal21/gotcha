@@ -1,5 +1,6 @@
 import type { AnimalClass, Card } from "./api";
 import { scoreOf } from "./api";
+import { collectionFacts, MEDALS, secretFlags, type MedalDef, type Totals } from "./badges";
 import { TIERS, tierRank, type Tier } from "./tiers";
 
 /*
@@ -23,7 +24,7 @@ export const XP = {
   rarity: { Common: 0, Uncommon: 50, Rare: 150, Epic: 400, Legendary: 1000 } as Record<Tier, number>,
 };
 
-export const MAX_LEVEL = 50;
+export const MAX_LEVEL = 200;
 
 // XP needed to go from level n to the next one, and the total XP at which level n starts.
 export const levelStep = (n: number) => 500 * n;
@@ -38,9 +39,16 @@ const RANKS: [number, string][] = [
   [30, "Naturalist"],
   [40, "Trailblazer"],
   [50, "Legend"],
+  [75, "Sage"],
+  [100, "Mythkeeper"],
+  [150, "Eternal"],
+  [200, "Immortal"],
 ];
 
 export const rankFor = (level: number) => RANKS.filter(([min]) => level >= min).at(-1)![1];
+
+// The next title up and the level it starts at, or null at the very top.
+export const nextRank = (level: number) => RANKS.find(([min]) => min > level) ?? null;
 
 export interface LevelInfo {
   level: number;
@@ -180,93 +188,29 @@ export interface DayLog {
 
 // ---------- Badges ----------
 
-export type MedalTier = 0 | 1 | 2 | 3 | 4;
-export const MEDAL_TIERS = ["Locked", "Bronze", "Silver", "Gold", "Platinum"] as const;
+export type MedalTier = number;
+export const MEDAL_TIERS = ["Locked", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Mythic"] as const;
 
-export type MedalGlyph =
-  | "cards"
-  | "species"
-  | "streak"
-  | "lucky"
-  | "legend"
-  | "spectrum"
-  | "fullday"
-  | "stamp"
-  | "pack"
-  | ClassKey;
-
-export interface MedalDef {
-  id: string;
-  name: string;
-  blurb: string; // what counts, in a few words
-  unit: string; // the thing being counted, for "12 / 50 cards"
-  glyph: MedalGlyph;
-  goals: [number, number, number, number];
-  metric: (s: Totals) => number;
-}
+export { MEDALS, type MedalDef, type MedalGlyph } from "./badges";
 
 export interface MedalState {
   def: MedalDef;
   value: number;
   tier: MedalTier;
-  goal: number | null; // next goal, or null when Platinum
+  goal: number | null; // next goal, or null when every tier is done
   floor: number; // the goal of the current tier (0 when locked)
 }
 
-interface Totals {
-  cards: number;
-  species: number;
-  bestStreak: number;
-  rarePlus: number;
-  legendary: number;
-  tiersOwned: number;
-  fullDays: number;
-  stampDays: number;
-  packs: number;
-  byClass: Record<ClassKey, number>;
-}
-
-const CLASS_MEDALS: [ClassKey, string][] = [
-  ["mammal", "Mammal Tracker"],
-  ["bird", "Birder"],
-  ["reptile", "Reptile Spotter"],
-  ["amphibian", "Pond Watcher"],
-  ["fish", "Angler"],
-  ["insect", "Bug Hunter"],
-  ["arachnid", "Web Watcher"],
-  ["statue", "Statue Seeker"],
-];
-
-export const MEDALS: MedalDef[] = [
-  { id: "collector", name: "Collector", blurb: "Cards caught", unit: "cards", glyph: "cards", goals: [10, 50, 200, 1000], metric: (t) => t.cards },
-  { id: "naturalist", name: "Naturalist", blurb: "Species discovered", unit: "species", glyph: "species", goals: [5, 25, 75, 200], metric: (t) => t.species },
-  { id: "devoted", name: "Devoted", blurb: "Longest day streak", unit: "days", glyph: "streak", goals: [3, 7, 30, 100], metric: (t) => t.bestStreak },
-  { id: "spectrum", name: "Full Spectrum", blurb: "Rarities owned", unit: "rarities", glyph: "spectrum", goals: [2, 3, 4, 5], metric: (t) => t.tiersOwned },
-  { id: "lucky", name: "Lucky Find", blurb: "Rare or better", unit: "cards", glyph: "lucky", goals: [1, 10, 40, 150], metric: (t) => t.rarePlus },
-  { id: "legend", name: "Legend Hunter", blurb: "Legendary pulls", unit: "cards", glyph: "legend", goals: [1, 3, 10, 30], metric: (t) => t.legendary },
-  { id: "fullday", name: "Full Day", blurb: "Days with every catch used", unit: "days", glyph: "fullday", goals: [1, 5, 20, 60], metric: (t) => t.fullDays },
-  { id: "researcher", name: "Field Researcher", blurb: "Days with every task done", unit: "days", glyph: "stamp", goals: [1, 7, 30, 100], metric: (t) => t.stampDays },
-  { id: "pack", name: "Pack Leader", blurb: "Photos with two or more animals", unit: "photos", glyph: "pack", goals: [1, 5, 20, 50], metric: (t) => t.packs },
-  ...CLASS_MEDALS.map(
-    ([cls, name]): MedalDef => ({
-      id: `class-${cls}`,
-      name,
-      blurb: `${CLASS_NAMES[cls].many} caught`,
-      unit: "cards",
-      glyph: cls,
-      goals: [3, 15, 50, 150],
-      metric: (t) => t.byClass[cls],
-    }),
-  ),
-];
+// Mystery badges have one step and show as gold once found.
+export const tierLabel = (m: MedalState) => (m.def.secret ? "Found" : MEDAL_TIERS[m.tier]);
+export const isSecret = (m: MedalState) => !!m.def.secret;
 
 function medalState(def: MedalDef, t: Totals): MedalState {
   const value = def.metric(t);
-  const tier = def.goals.filter((g) => value >= g).length as MedalTier;
-  const goals: readonly number[] = def.goals;
-  return { def, value, tier, goal: tier < 4 ? goals[tier] : null, floor: tier > 0 ? goals[tier - 1] : 0 };
+  const reached = def.goals.filter((g) => value >= g).length;
+  const tier = def.secret ? (reached ? 3 : 0) : reached;
+  return { def, value, tier, goal: reached < def.goals.length ? def.goals[reached] : null, floor: reached > 0 ? def.goals[reached - 1] : 0 };
 }
-
 // ---------- Journal ----------
 
 export interface SpeciesEntry {
@@ -306,7 +250,7 @@ function better(a: Card, b: Card) {
   return tierRank(a.rarity) - tierRank(b.rarity) || scoreOf(a.stats) - scoreOf(b.stats);
 }
 
-export function computeProgress(all: Card[], { now = Date.now(), cap = 10 } = {}): Progress {
+export function computeProgress(all: Card[], { now = Date.now(), cap = 10, eggs = new Set<string>() }: { now?: number; cap?: number; eggs?: ReadonlySet<string> } = {}): Progress {
   const cards = [...all].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.number - b.number);
   const ledger = new Map<string, XpLine[]>();
   const seen = new Set<string>();
@@ -397,19 +341,47 @@ export function computeProgress(all: Card[], { now = Date.now(), cap = 10 } = {}
     for (let i = dayKeys.length - 1; i > 0 && shiftDay(dayKeys[i - 1], 1) === dayKeys[i]; i--) currentStreak++;
   }
 
+  const copies = new Map([...journal.entries()].map(([k, j]) => [k, j.cards.length] as const));
+  const facts = collectionFacts(cards, copies);
+  const chronological = days; // already oldest first
+  const photoGroups = [...photos.values()];
+  const flags = secretFlags({
+    cards,
+    photos: photoGroups,
+    days: chronological.map((d) => d.caught.map((x) => x.card)),
+    dayKeys: chronological.map((d) => d.day),
+    eggs,
+  });
   const totals: Totals = {
     cards: cards.length,
     species: seen.size,
+    level: levelFor(xp).level,
     bestStreak,
     rarePlus: tiers.Rare + tiers.Epic + tiers.Legendary,
     legendary: tiers.Legendary,
+    epic: tiers.Epic + tiers.Legendary,
+    uncommon: tiers.Uncommon,
     tiersOwned: TIERS.filter((t) => tiers[t] > 0).length,
     fullDays: days.filter((d) => d.caught.length >= cap).length,
     stampDays: days.filter((d) => d.stamp).length,
-    packs: [...photos.values()].filter((g) => g.length > 1).length,
-    byClass: Object.fromEntries(CLASS_ORDER.map((k) => [k, classes[k].cards])) as Record<ClassKey, number>,
-  };
-  const medals = MEDALS.map((def) => medalState(def, totals));
+    activeDays: days.length,
+    packs: photoGroups.filter((g) => g.length > 1).length,
+    bigPack: Math.max(0, ...photoGroups.map((g) => g.length)),
+    bestScore: facts.bestScore,
+    heavy: facts.heavy,
+    titans: facts.titans,
+    maxCopies: facts.maxCopies,
+    calendarMonths: facts.calendarMonths,
+    letters: facts.letters,
+    colorWords: facts.colorWords,
+    night: facts.night,
+    early: facts.early,
+    weekend: facts.weekend,
+    byClass: Object.fromEntries(CLASS_ORDER.map((k) => [k, classes[k].cards])),
+    speciesByClass: Object.fromEntries(CLASS_ORDER.map((k) => [k, classes[k].species])),
+    families: facts.families,
+    flags,
+  };  const medals = MEDALS.map((def) => medalState(def, totals));
 
   const week = Array.from({ length: 7 }, (_, i) => {
     const day = shiftDay(today, i - 6);

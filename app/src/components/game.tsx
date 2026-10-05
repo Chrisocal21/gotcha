@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { MEDAL_TIERS, type ClassKey, type MedalState, type Progress, type TaskState } from "../lib/progress";
-import { ClassGlyph, glyphFor, IconCheck } from "./glyphs";
+import { isSecret, tierLabel, type ClassKey, type MedalState, type Progress, type TaskState } from "../lib/progress";
+import { ClassGlyph, glyphFor, IconCheck, IconHowTo } from "./glyphs";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 export const xpText = (n: number) => `${fmt(n)} XP`;
@@ -29,7 +29,7 @@ export function LevelBadge({
     >
       <span className="lvl__core">
         {label && <span className="lvl__lv">Level</span>}
-        <span className="lvl__num">{level}</span>
+        <span className="lvl__num" data-wide={level >= 100 ? "" : undefined}>{level}</span>
       </span>
     </span>
   );
@@ -45,11 +45,12 @@ export function XpBar({ ratio, className = "", tone = "light" }: { ratio: number
 
 // A badge, drawn as an enamel pin. Its metal shows the tier reached.
 export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState; size?: number; showProgress?: boolean }) {
-  const G = glyphFor(m.def.glyph);
+  const hidden = isSecret(m) && m.tier === 0;
+  const G = hidden ? IconHowTo : glyphFor(m.def.glyph);
   const span = m.goal != null ? m.goal - m.floor : 1;
   const ratio = m.goal != null ? Math.min(1, (m.value - m.floor) / span) : 1;
   return (
-    <div className={`medal metal-${m.tier}`} style={{ "--enamel": ENAMEL[m.def.glyph] } as CSSProperties}>
+    <div className={`medal metal-${m.tier}`} style={{ "--enamel": m.def.color } as CSSProperties}>
       <div className="medal__pin" style={{ width: size, height: size }}>
         <div className="medal__enamel">
           <G size={Math.round(size * 0.4)} strokeWidth={2.1} />
@@ -57,9 +58,11 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
       </div>
       {showProgress && (
         <div className="medal__text">
-          <div className="medal__name">{m.def.name}</div>
-          <div className="medal__tier">{m.tier > 0 ? MEDAL_TIERS[m.tier] : m.def.blurb}</div>
-          {m.goal != null ? (
+          <div className="medal__name">{hidden ? "Mystery badge" : m.def.name}</div>
+          <div className="medal__tier">{hidden ? m.def.secret!.hint : m.tier > 0 ? tierLabel(m) : m.def.blurb}</div>
+          {hidden ? null : isSecret(m) ? (
+            <div className="medal__count">{m.def.blurb}</div>
+          ) : m.goal != null ? (
             <>
               <span className="medal__bar" style={{ "--p": ratio } as CSSProperties}>
                 <i />
@@ -77,27 +80,7 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
   );
 }
 
-// Enamel color per badge. Class badges use their class color.
-const ENAMEL: Record<string, string> = {
-  cards: "#0f6e53",
-  species: "#3f8f3a",
-  streak: "#e5641a",
-  lucky: "#2f6fd6",
-  legend: "#b07a10",
-  spectrum: "#6a4fd0",
-  fullday: "#1f8fb8",
-  stamp: "#b23f6a",
-  pack: "#1d7f99",
-  mammal: "#c86f1f",
-  bird: "#2489c4",
-  reptile: "#45893a",
-  amphibian: "#108e81",
-  fish: "#2c5bc2",
-  insect: "#b08408",
-  arachnid: "#8045ab",
-  statue: "#6b6862",
-  other: "#b44d75",
-};
+
 
 export function TaskRow({ t }: { t: TaskState }) {
   return (

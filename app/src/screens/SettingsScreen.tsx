@@ -18,6 +18,7 @@ import {
   type Theme,
 } from "../lib/prefs";
 import { isSoundOn, setSoundOn } from "../lib/sfx";
+import { useTapCounter } from "../lib/eggs";
 import { MEDALS, XP, type Progress } from "../lib/progress";
 import { BOOST, ODDS, TIERS, tierClass } from "../lib/tiers";
 import { LevelBadge, xpText } from "../components/game";
@@ -115,6 +116,7 @@ function SettingsHome({
   refreshCollection: () => Promise<unknown>;
   onShowWelcome: () => void;
 }) {
+  const tapVersion = useTapCounter("e-version", 5);
   const { user } = useUser();
   const isDeveloper = !!user?.emailAddresses.some(
     (e) => e.verification?.status === "verified" && e.emailAddress.toLowerCase() === DEV_EMAIL,
@@ -262,7 +264,7 @@ function SettingsHome({
         <DeveloperTools status={status} collection={collection} refreshStatus={refreshStatus} refreshCollection={refreshCollection} />
       )}
 
-      <p className="mt-8 text-center text-[12.5px] leading-relaxed text-ink-3">
+      <p className="mt-8 text-center text-[12.5px] leading-relaxed text-ink-3" onClick={tapVersion}>
         Gotcha {__APP_VERSION__} · Everyone testing shares one account for now.
       </p>
     </div>
@@ -344,7 +346,7 @@ function LevelsAndBadges() {
     <div className="page max-w-[680px]">
       <SubpageHeader title="Levels and badges" />
       <p className="text-[15px] leading-relaxed text-ink-2">
-        Every catch earns XP, and XP raises your explorer level, up to level 50. It's worked out on this device from the cards you own, so it never
+        Every catch earns XP, and XP raises your explorer level, and there's no end to it: the ranks run past level 100. It's worked out on this device from the cards you own, so it never
         changes a card, the odds or your daily catches.
       </p>
       <Group title="XP">
@@ -355,9 +357,10 @@ function LevelsAndBadges() {
           </div>
         ))}
       </Group>
-      <Group title="Badges" footer="Each badge goes bronze, silver, gold, then platinum. Three new field tasks appear every day, the same for everyone.">
+      <Group title="Badges" footer="Most badges go bronze, silver, gold, platinum, diamond, then mythic. Mystery badges stay hidden until you find them. Three new field tasks appear every day, the same for everyone.">
         <div className="px-4 py-3.5 text-[15px] leading-relaxed">
-          {MEDALS.length} badges to earn, from Collector and Naturalist to one for each animal class. See your progress on the Explorer page.
+          {MEDALS.length} badges to earn: milestones, one for each animal class, collections for every kind of cat, bird and dog, and a pile of mystery badges
+          hiding in the calendar, the stats and the app itself. See your progress on the Explorer page.
         </div>
       </Group>
     </div>

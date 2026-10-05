@@ -3,9 +3,11 @@ import { getCard, getCollection, getStatus, sendCatch, type Card, type CatchResu
 import { neighbors, position } from "./lib/browse";
 import type { Shot } from "./lib/capture";
 import { useAutoHide } from "./lib/hooks";
+import { findEgg, useEggs, useKeyEggs } from "./lib/eggs";
 import { hasSeenWelcome, markWelcomeSeen } from "./lib/prefs";
 import { computeProgress } from "./lib/progress";
 import { navigate, useRoute } from "./lib/router";
+import EggToast from "./components/EggToast";
 import Welcome from "./components/Welcome";
 import { MobileTopBar, TabBar, TopNav, type Screen } from "./components/AppShell";
 import CameraScreen from "./screens/CameraScreen";
@@ -73,9 +75,11 @@ export default function App() {
   }, [offline, refreshStatus, refreshCollection]);
 
   // Levels, badges and field tasks all come from the cards, so they're recomputed whenever the collection changes.
+  const eggs = useEggs();
+  useKeyEggs();
   const progress = useMemo(
-    () => (collection ? computeProgress(collection.cards, { cap: status?.cap ?? 10 }) : null),
-    [collection, status?.cap],
+    () => (collection ? computeProgress(collection.cards, { cap: status?.cap ?? 10, eggs }) : null),
+    [collection, status?.cap, eggs],
   );
 
   const [, section = "", cardId] = route.split("/");
@@ -83,6 +87,13 @@ export default function App() {
 
   // The Customize page lives under Settings, so Settings stays highlighted in the navigation.
   const navScreen: Screen = screen === "customize" ? "settings" : screen;
+
+  // Visiting every part of the app in one sitting is an easter egg.
+  const visited = useRef(new Set<Screen>());
+  useEffect(() => {
+    visited.current.add(navScreen);
+    if (["camera", "collection", "explorer", "settings"].every((s) => visited.current.has(s as Screen))) findEgg("e-wander");
+  }, [navScreen]);
 
   // Each page (and each page under Settings) starts at the top.
   const pageKey = screen === "settings" ? `settings/${cardId ?? ""}` : screen;
@@ -193,6 +204,7 @@ export default function App() {
       )}
 
       {welcome && <Welcome onClose={closeWelcome} />}
+      <EggToast />
 
       {card && (screen === "collection" || screen === "explorer") && (
         <CardDetail

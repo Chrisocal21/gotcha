@@ -691,7 +691,9 @@ button:disabled {
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
-.lvl__lv {
+.lvl__num[data-wide] {
+  font-size: calc(var(--size) * 0.27);
+}.lvl__lv {
   margin-bottom: calc(var(--size) * 0.02);
   font-family: var(--font-mono);
   font-size: calc(var(--size) * 0.095);
@@ -730,7 +732,7 @@ button:disabled {
   background: rgb(255 255 255 / 0.16);
 }
 
-/* Badges, drawn as enamel pins. metal-0 is locked; 1 to 4 are bronze, silver, gold, platinum. */
+/* Badges, drawn as enamel pins. metal-0 is locked; 1 to 6 are bronze, silver, gold, platinum, diamond, mythic. */
 .medal {
   --m1: #c9cdd1;
   --m2: #eef0f2;
@@ -760,7 +762,16 @@ button:disabled {
   --m2: #ffffff;
   --m3: #c2a7ef;
 }
-.medal__pin {
+.metal-5 {
+  --m1: #5bb8e8;
+  --m2: #ffffff;
+  --m3: #9be4f2;
+}
+.metal-6 {
+  --m1: #c2185b;
+  --m2: #ffe08a;
+  --m3: #7b2ff7;
+}.medal__pin {
   position: relative;
   flex: none;
   padding: 7%;
@@ -773,7 +784,26 @@ button:disabled {
 .metal-4 .medal__pin {
   background: conic-gradient(from 210deg, #8fd3ff, #fff, #d6b8ff, #ffd2ef, #fff, #a8f0dd, #8fd3ff);
 }
-.medal__enamel {
+.metal-5 .medal__pin {
+  background: conic-gradient(from 210deg, #4fc3f7, #fff, #b3f0ff, #81d4fa, #fff, #e0f7ff, #4fc3f7);
+}
+.metal-6 .medal__pin {
+  background: conic-gradient(from 210deg, #ff5f6d, #ffe08a, #7b2ff7, #00d4ff, #ffe08a, #ff5f6d, #7b2ff7);
+  animation: mythic-spin 6s linear infinite;
+}
+@keyframes mythic-spin {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .metal-6 .medal__pin {
+    animation: none;
+  }
+}
+:root[data-motion="reduced"] .metal-6 .medal__pin {
+  animation: none;
+}.medal__enamel {
   display: grid;
   place-items: center;
   width: 100%;

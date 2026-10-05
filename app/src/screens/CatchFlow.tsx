@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import { scoreOf, type Card, type CatchResult, type Status } from "../lib/api";
 import { countdown, pad3, plural } from "../lib/format";
 import { prefersReducedMotion, useCountUp } from "../lib/hooks";
-import { computeProgress, MEDAL_TIERS, rewardsFor, type RewardLine, type Rewards as RewardsData } from "../lib/progress";
+import { computeProgress, rewardsFor, tierLabel, type RewardLine, type Rewards as RewardsData } from "../lib/progress";
 import { saveOriginal, shouldAutoSave } from "../lib/savePhoto";
 import { haptic, sfx } from "../lib/sfx";
 import { CHARGE_MS, REVEAL_HAPTIC, tierClass, tierRank, type Tier } from "../lib/tiers";
@@ -506,7 +506,7 @@ function Rewards({ r: raw, newSpecies, count, onExplorer }: { r: RewardsData; ne
               <div className="min-w-0">
                 <div className="text-[12px] font-semibold text-white/60">New badge</div>
                 <div className="text-[14px] font-bold">
-                  {r.medals[0].def.name} · {MEDAL_TIERS[r.medals[0].tier]}
+                  {r.medals[0].def.name} · {tierLabel(r.medals[0])}
                 </div>
               </div>
             </div>

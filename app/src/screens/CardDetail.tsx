@@ -8,7 +8,8 @@ import { boostLabel, ODDS, tierClass } from "../lib/tiers";
 import { CardFront } from "../components/GameCard";
 import { ClassEmblem, SectionTitle, xpText } from "../components/game";
 import { IconClose, IconNext, IconPrev } from "../components/glyphs";
-import { IconButton, Label, Panel } from "../components/ui";
+import PrintDialog from "../components/PrintDialog";
+import { Button, IconButton, Label, Panel } from "../components/ui";
 import CardZoom from "./CardZoom";
 
 // Boosted stats run up to 200 (100 times the Legendary boost), so bars use that scale.
@@ -36,7 +37,8 @@ export default function CardDetail({
   onClose: () => void;
 }) {
   const [zoom, setZoom] = useState(false);
-  useEscape(() => (zoom ? setZoom(false) : onClose()));
+  const [printing, setPrinting] = useState(false);
+  useEscape(() => (printing ? undefined : zoom ? setZoom(false) : onClose()));
   const score = scoreOf(card.stats);
   const natural = scoreOf(card.traits);
   const cls = classKeyOf(card);
@@ -47,7 +49,7 @@ export default function CardDetail({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (zoom) return; // the enlarged card handles its own keys
+      if (zoom || printing) return; // the enlarged card and the print dialog handle their own keys
       if (e.key === "ArrowLeft") goPrev();
       if (e.key === "ArrowRight") goNext();
     };
@@ -63,6 +65,7 @@ export default function CardDetail({
       aria-label={card.name}
       onClick={onClose}
     >
+      {printing && <PrintDialog card={card} onClose={() => setPrinting(false)} />}
       {zoom && <CardZoom card={card} prev={prev} next={next} index={index} total={total} onMove={onMove} onClose={() => setZoom(false)} />}
       <div
         className={`rise-in relative min-h-full bg-sand lg:mx-auto lg:my-10 lg:min-h-0 lg:max-w-[1080px] lg:rounded-[32px] lg:shadow-lift ${tierClass(card.rarity)} ${classClass(card.animalClass, card.isStatue)}`}
@@ -91,6 +94,11 @@ export default function CardDetail({
                 {window.matchMedia("(pointer: coarse)").matches ? "Tap" : "Click"} the card to hold it and turn it over
               </p>
               <NavArrow dir="next" disabled={!next} onClick={goNext} />
+            </div>
+            <div className="mt-3 flex justify-center">
+              <Button variant="secondary" size="sm" onClick={() => setPrinting(true)}>
+                Download for print
+              </Button>
             </div>
           </div>
 
