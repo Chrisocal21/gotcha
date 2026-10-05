@@ -214,7 +214,7 @@ function FontPicker({ value, onChange }: { value: FontKey; onChange: (f: FontKey
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <ul role="listbox" className="absolute inset-x-0 top-full z-40 mt-2 max-h-[min(60vh,420px)] overflow-y-auto overscroll-contain rounded-2xl border border-line-strong bg-paper p-1.5 shadow-lift">
+          <ul role="listbox" className="relative z-40 mt-2 max-h-[min(50vh,340px)] overflow-y-auto overscroll-contain rounded-2xl border border-line-strong bg-paper-2 p-1.5">
             {FONT_GROUPS.map((g) => (
               <li key={g}>
                 <div className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">{g}</div>
