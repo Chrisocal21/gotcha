@@ -613,60 +613,6 @@ button:disabled {
   mask: radial-gradient(farthest-side, transparent calc(100% - 0.13em), #000 calc(100% - 0.125em));
 }
 
-/* The nav wordmark: bigger, with a brand gradient, a glowing ring and a lift on hover. */
-.logo--pop {
-  letter-spacing: -0.045em;
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--color-canopy) 35%, transparent));
-  transition: transform 0.25s var(--ease-pop);
-}
-.logo--pop:hover {
-  transform: scale(1.06) rotate(-1.5deg);
-}
-/* Each letter is a different animal: tiger, leopard, zebra, snake and wolf. */
-.logo--pop > span:not(.logo-o) {
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.95)) drop-shadow(0 0 0.6px rgb(0 0 0 / 0.95)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
-}
-.logo--pop > span:nth-child(1) {
-  background-image:
-    repeating-linear-gradient(112deg, transparent 0 0.07em, rgb(30 12 0 / 0.92) 0.07em 0.13em, transparent 0.13em 0.24em),
-    repeating-linear-gradient(68deg, transparent 0 0.16em, rgb(30 12 0 / 0.55) 0.16em 0.19em, transparent 0.19em 0.31em),
-    linear-gradient(180deg, #ffa733, #e8650c);
-}
-.logo--pop > span:nth-child(3) {
-  background-image:
-    radial-gradient(circle at 50% 50%, #f0bd55 0 0.03em, #3a2008 0.036em 0.07em, transparent 0.075em),
-    radial-gradient(circle at 50% 50%, #f0bd55 0 0.026em, #3a2008 0.03em 0.06em, transparent 0.065em),
-    linear-gradient(180deg, #f6cb66, #d9972b);
-  background-size: 0.22em 0.22em, 0.22em 0.22em, 100% 100%;
-  background-position: 0 0, 0.11em 0.11em, 0 0;
-}
-.logo--pop > span:nth-child(4) {
-  background-image: repeating-linear-gradient(98deg, #121212 0 0.075em, #f6f5ef 0.075em 0.155em);
-}
-.logo--pop > span:nth-child(5) {
-  background-image:
-    radial-gradient(circle at 50% 0, transparent 0.085em, rgb(0 40 0 / 0.5) 0.095em 0.115em, transparent 0.125em),
-    radial-gradient(circle at 50% 0, transparent 0.085em, rgb(0 40 0 / 0.5) 0.095em 0.115em, transparent 0.125em),
-    linear-gradient(180deg, #7acb5a, #2f7f2c);
-  background-size: 0.2em 0.14em, 0.2em 0.14em, 100% 100%;
-  background-position: 0 0, 0.1em 0.07em, 0 0;
-}
-.logo--pop > span:nth-child(6) {
-  background-image:
-    repeating-linear-gradient(80deg, rgb(255 255 255 / 0.4) 0 0.01em, transparent 0.01em 0.034em),
-    repeating-linear-gradient(96deg, rgb(20 25 35 / 0.3) 0 0.012em, transparent 0.012em 0.042em),
-    linear-gradient(180deg, #e3e7ec, #7d8794);
-}.logo--pop .logo-o {
-  width: 0.6em;
-  height: 0.6em;
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 0.18em), #000 calc(100% - 0.175em));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 0.18em), #000 calc(100% - 0.175em));
-  filter: saturate(1.4) drop-shadow(0 0 5px color-mix(in srgb, var(--color-rare) 55%, transparent));
-}
 .sun-fill {
   background: var(--sun-gradient);
 }
