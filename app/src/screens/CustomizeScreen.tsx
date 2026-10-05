@@ -18,6 +18,7 @@ import {
   type Style,
 } from "../lib/style";
 import { CardBack } from "../components/GameCard";
+import { getExplorerName } from "../lib/prefs";
 import { Group, SubpageHeader } from "../components/SettingsList";
 import { Button, Segmented } from "../components/ui";
 
@@ -39,26 +40,17 @@ export default function CustomizeScreen() {
   const isCustomAccent = !ACCENTS.some((a) => a.value === style.accent);
 
   return (
-    <div className="page max-w-[680px]">
+    <div className="page max-w-[1040px]">
       <SubpageHeader title="Customize" />
 
-      {/* A live preview of the choices below. */}
-      <div className="settings-group flex items-center gap-5 p-5">
-        <div className="w-[76px] shrink-0">
-          <CardBack />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+        {/* Always in view, even on a phone: change anything below and watch this change. */}
+        <div className="sticky top-[70px] z-20 -mx-1 mb-4 lg:top-24 lg:order-2 lg:mx-0">
+          <Preview />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-display text-[19px] leading-tight font-bold">Every animal becomes a card</div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button size="sm">Primary</Button>
-            <Button size="sm" variant="sun">
-              Catch
-            </Button>
-          </div>
-        </div>
-      </div>
-      <p className="settings-footer">Changes show up right away and stay on this device. Cards never change, so they look the same to everyone.</p>
 
+        <div className="min-w-0 lg:order-1">
+          <p className="settings-footer !mt-0 !mb-3">Everything updates live and stays on this device. Cards never change, so they look the same to everyone.</p>
       <Group title="Colors">
         <SwatchRow title="Main color" detail="Buttons, links and highlights">
           {ACCENTS.map((a) => (
@@ -195,10 +187,37 @@ export default function CustomizeScreen() {
           Reset to the original look
         </Button>
       </div>
+        </div>
+      </div>
     </div>
   );
 }
 
+// A small sample of the app that restyles with every change: your name, the fonts, the buttons, the corners and the card back.
+function Preview() {
+  const name = getExplorerName() || "Explorer";
+  return (
+    <div className="flex items-center gap-4 rounded-(--r-panel) border border-line bg-paper p-3.5 shadow-lift lg:flex-col lg:items-stretch lg:gap-4 lg:p-5">
+      <div className="w-[64px] shrink-0 lg:mx-auto lg:w-[150px]">
+        <CardBack />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Live preview</div>
+        <div className="truncate font-display text-[22px] leading-tight font-extrabold tracking-tight lg:text-[30px]">{name}</div>
+        <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:text-[14.5px]">Every animal becomes a card. Catch them all.</p>
+        <div className="mt-2.5 hidden h-2 overflow-hidden rounded-full bg-paper-3 lg:block">
+          <i className="block h-full w-3/5 rounded-full bg-canopy" />
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <Button size="sm">Primary</Button>
+          <Button size="sm" variant="sun">
+            Catch
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function SwatchRow({ title, detail, children }: { title: string; detail?: string; children: ReactNode }) {
   return (
     <div className="custom-row">
