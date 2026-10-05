@@ -48,7 +48,7 @@ export default function CustomizeScreen() {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         {/* Always in view, even on a phone: change anything below and watch this change. */}
         <div className="sticky top-[70px] z-20 -mx-1 mb-4 lg:top-24 lg:order-2 lg:mx-0">
-          <Preview font={style.font} />
+          <Preview />
         </div>
 
         <div className="min-w-0 lg:order-1">
@@ -108,8 +108,14 @@ export default function CustomizeScreen() {
           />
         </ControlRow>
         <div className="custom-row">
-          <div className="text-[15.5px] font-semibold">Font</div>
+          <div className="text-[15.5px] font-semibold">Headings font</div>
+          <div className="text-[13px] text-ink-3">Titles, big numbers and your name</div>
           <FontPicker value={style.font} onChange={(font) => update({ font })} />
+        </div>
+        <div className="custom-row">
+          <div className="text-[15.5px] font-semibold">App font</div>
+          <div className="text-[13px] text-ink-3">Everything else: buttons, labels and paragraphs</div>
+          <FontPicker value={style.body} onChange={(body) => update({ body })} bodyOnly />
         </div>      </Group>
 
       <Group title="Share your style" footer={note ? <span className="text-canopy">{note}</span> : "Send a friend your code, or paste theirs to try their look."}>
@@ -177,9 +183,10 @@ export default function CustomizeScreen() {
 }
 
 // A compact picker: arrows flip through every font one by one, or open the list to jump straight to one.
-function FontPicker({ value, onChange }: { value: FontKey; onChange: (f: FontKey) => void }) {
+function FontPicker({ value, onChange, bodyOnly = false }: { value: FontKey; onChange: (f: FontKey) => void; bodyOnly?: boolean }) {
   const [open, setOpen] = useState(false);
-  const keys = Object.keys(FONTS) as FontKey[];
+  // Body text needs a readable face, so the app-font list leaves out the decorative headline fonts.
+  const keys = (Object.keys(FONTS) as FontKey[]).filter((k) => !bodyOnly || FONTS[k].scope === "all");
   const index = keys.indexOf(value);
   const go = (step: number) => onChange(keys[(index + step + keys.length) % keys.length]);
   const def = FONTS[value];
@@ -200,7 +207,7 @@ function FontPicker({ value, onChange }: { value: FontKey; onChange: (f: FontKey
               {def.name}
             </span>
             <span className="block text-[11.5px] text-ink-3">
-              {index + 1} of {keys.length} · {def.scope === "all" ? "Whole app" : "Headings"}
+              {index + 1} of {keys.length}
             </span>
           </span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 text-ink-3 transition ${open ? "rotate-180" : ""}`} aria-hidden>
@@ -247,7 +254,7 @@ function FontPicker({ value, onChange }: { value: FontKey; onChange: (f: FontKey
   );
 }
 // A small sample of the app that restyles with every change: your name, the fonts, the buttons, the corners and the card back.
-function Preview({ font }: { font: FontKey }) {
+function Preview() {
   const name = getExplorerName() || "Explorer";
   return (
     <div className="flex items-center gap-4 rounded-(--r-panel) border border-line bg-paper p-3.5 shadow-lift lg:flex-col lg:items-stretch lg:gap-4 lg:p-5">
@@ -255,7 +262,7 @@ function Preview({ font }: { font: FontKey }) {
         <CardBack />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Live preview · {FONTS[font].name}</div>
+        <div className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Live preview</div>
         <div className="truncate font-display text-[22px] leading-tight font-extrabold tracking-tight lg:text-[30px]">{name}</div>
         <p className="mt-0.5 text-[13px] leading-snug text-ink-2 lg:text-[14.5px]">Every animal becomes a card. Catch them all.</p>
         <div className="mt-2.5 hidden h-2 overflow-hidden rounded-full bg-paper-3 lg:block">

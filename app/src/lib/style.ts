@@ -37,11 +37,12 @@ export interface Style {
   bg: string;
   pattern: Pattern;
   corners: Corners;
-  font: FontKey;
+  font: FontKey; // headings: titles, big numbers and your name
+  body: FontKey; // everything else
   back: string;
 }
 
-export const DEFAULT_STYLE: Style = { accent: "#0f5e47", action: "sun", bg: "meadow", pattern: "none", corners: "soft", font: "default", back: "forest" };
+export const DEFAULT_STYLE: Style = { accent: "#0f5e47", action: "sun", bg: "meadow", pattern: "none", corners: "soft", font: "default", body: "clean", back: "forest" };
 
 type Triple = [string, string, string];
 
@@ -150,6 +151,7 @@ export function sanitize(input: unknown): Style {
     pattern: pick(s.pattern, PATTERNS.map((p) => p.value), DEFAULT_STYLE.pattern),
     corners: pick(s.corners, Object.keys(CORNERS), DEFAULT_STYLE.corners),
     font: pick(s.font, Object.keys(FONTS), DEFAULT_STYLE.font),
+    body: pick(s.body, Object.keys(FONTS).filter((k) => FONTS[k as FontKey].scope === "all"), FONTS[pick(s.font, Object.keys(FONTS), DEFAULT_STYLE.font) as FontKey].scope === "all" ? pick(s.font, Object.keys(FONTS), DEFAULT_STYLE.font) : DEFAULT_STYLE.body),
     back: pick(s.back, Object.keys(BACKS), DEFAULT_STYLE.back),
   };
 }
@@ -191,7 +193,7 @@ export function cssVars(style: Style): { vars: Record<string, string>; pattern: 
       "--r-panel": CORNERS[style.corners].panel,
       "--r-btn": CORNERS[style.corners].btn,
       "--font-display": font.display,
-      "--font-sans": font.sans,
+      "--font-sans": FONTS[style.body].sans,
     },
   };
 }
