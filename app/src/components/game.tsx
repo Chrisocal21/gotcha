@@ -64,7 +64,7 @@ export function MedalPin({ m, size = 72, showProgress = true }: { m: MedalState;
             <div className="medal__count">{m.def.blurb}</div>
           ) : m.goal != null ? (
             <>
-              <span className="medal__bar" style={{ "--p": ratio } as CSSProperties}>
+              <span className={`medal__bar metal-${Math.min(m.tier + 1, 6)}`} style={{ "--p": ratio } as CSSProperties}>
                 <i />
               </span>
               <div className="medal__count tabular">

@@ -241,7 +241,7 @@ function NextBadges({ p, onSeeAll }: { p: Progress; onSeeAll: () => void }) {
                   {m.value} / {m.goal}
                 </span>
               </div>
-              <span className="medal__bar !mt-2 !w-full" style={{ "--p": Math.min(1, ratio) } as CSSProperties}>
+              <span className={`medal__bar metal-${Math.min(m.tier + 1, 6)} !mt-2 !w-full`} style={{ "--p": Math.min(1, ratio) } as CSSProperties}>
                 <i />
               </span>
               <div className="mt-1.5 text-[12px] text-ink-3">

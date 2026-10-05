@@ -874,7 +874,7 @@ button:disabled {
   inset: 0 auto 0 0;
   width: calc(var(--p) * 100%);
   border-radius: inherit;
-  background: var(--xp-gradient);
+  background: linear-gradient(180deg, var(--m2), var(--m3) 55%, var(--m1));
 }
 .medal__count {
   margin-top: 5px;
