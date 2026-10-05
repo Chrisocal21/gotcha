@@ -3084,3 +3084,16 @@ button:disabled {
   text-shadow: 0 1px 0 rgb(0 0 0 / 0.3);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 0 0 1px #0a4f3b, 0 1px 4px rgb(10 79 59 / 0.5);
 }
+
+/* Small and quiet, so the name stays the loudest thing in a row. */
+.tag--compact {
+  height: 15px;
+  gap: 3px;
+  padding: 0 6px 0 4px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  box-shadow: none;
+  text-shadow: none;
+  opacity: 0.88;
+}

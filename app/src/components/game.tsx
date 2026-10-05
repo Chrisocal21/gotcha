@@ -36,20 +36,20 @@ export function LevelBadge({
 }
 
 // The official Founders mark, worn by anyone who holds a Founders Edition card.
-export function FounderTag({ className = "" }: { className?: string }) {
+export function FounderTag({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <span className={`founder-tag ${className}`} title="Founders Edition: here from the start">
-      <IconFounder size={12} strokeWidth={2.4} fill="currentColor" />
+    <span className={`founder-tag ${compact ? "tag--compact" : ""} ${className}`} title="Founders Edition: here from the start">
+      <IconFounder size={compact ? 9 : 12} strokeWidth={2.4} fill="currentColor" />
       Founder
     </span>
   );
 }
 
 // For the person who made Gotcha. Set only by the server.
-export function CreatorTag({ className = "" }: { className?: string }) {
+export function CreatorTag({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <span className={`creator-tag ${className}`} title="Made Gotcha">
-      <IconCreator size={12} strokeWidth={2.4} />
+    <span className={`creator-tag ${compact ? "tag--compact" : ""} ${className}`} title="Made Gotcha">
+      <IconCreator size={compact ? 9 : 12} strokeWidth={2.4} />
       Creator
     </span>
   );

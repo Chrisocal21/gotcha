@@ -70,8 +70,8 @@ export default function Leaderboard() {
             <div className="text-[12.5px] font-semibold text-ink-3">You appear as</div>
             <div className="flex items-center gap-2 font-display text-[19px] font-bold">
               <span className="truncate">{me.name}</span>
-              {me.creator && <CreatorTag />}
-              {me.founder && <FounderTag />}
+              {me.creator && <CreatorTag compact />}
+              {me.founder && <FounderTag compact />}
             </div>
           </div>
           <div className="flex items-center gap-5 text-right">
@@ -143,8 +143,8 @@ function Row({ e, gap = false }: { e: BoardEntry; gap?: boolean }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[15px] font-bold">
           <span className="truncate">{e.name}</span>
-          {e.creator && <CreatorTag />}
-          {e.founder && <FounderTag />}
+          {e.creator && <CreatorTag compact />}
+          {e.founder && <FounderTag compact />}
           {e.you && <span className="text-[12px] font-semibold text-xp-ink">You</span>}
         </div>
         <div className="text-[12.5px] text-ink-3 tabular">
